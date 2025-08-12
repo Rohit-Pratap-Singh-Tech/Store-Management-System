@@ -1,0 +1,87 @@
+<!-- Store Management System - SVG logo variants
+     File contains 3 logo options (Variant A, B, C).
+     Each SVG is standalone and editable (colors, text, sizes).
+-->
+
+<!-- Variant A: Modern box + barcode + text -->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="140" viewBox="0 0 480 140" role="img" aria-labelledby="titleA">
+  <title id="titleA">StoreManage logo variant A</title>
+  <defs>
+    <linearGradient id="gA" x1="0" x2="1">
+      <stop offset="0" stop-color="#2563eb" />
+      <stop offset="1" stop-color="#06b6d4" />
+    </linearGradient>
+  </defs>
+  <!-- box icon -->
+  <g transform="translate(18,16)">
+    <rect x="0" y="12" width="72" height="56" rx="6" fill="url(#gA)" />
+    <path d="M0 12 L36 0 L72 12" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+    <rect x="10" y="28" width="12" height="28" rx="2" fill="#ffffff" opacity="0.14" />
+  </g>
+  <!-- barcode lines -->
+  <g transform="translate(110,26)" fill="#0f172a">
+    <rect x="0" y="0" width="6" height="44" />
+    <rect x="10" y="0" width="4" height="44" />
+    <rect x="18" y="0" width="10" height="44" />
+    <rect x="32" y="0" width="3" height="44" />
+  </g>
+  <!-- text -->
+  <g transform="translate(170,44)">
+    <text x="0" y="0" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a">StoreManage</text>
+    <text x="0" y="28" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">Inventory • Sales • Reports</text>
+  </g>
+</svg>
+
+<!-- Variant B: Cart + gear (operations focus) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="140" viewBox="0 0 480 140" role="img" aria-labelledby="titleB">
+  <title id="titleB">StoreManage logo variant B</title>
+  <defs>
+    <linearGradient id="gB" x1="0" x2="1">
+      <stop offset="0" stop-color="#f97316" />
+      <stop offset="1" stop-color="#ef4444" />
+    </linearGradient>
+  </defs>
+  <!-- cart -->
+  <g transform="translate(20,30)">
+    <path d="M8 14 L18 14 L30 56 L94 56 L108 20 L30 20" fill="#fff" stroke="url(#gB)" stroke-width="4" stroke-linejoin="round" />
+    <circle cx="44" cy="76" r="8" fill="url(#gB)" />
+    <circle cx="84" cy="76" r="8" fill="url(#gB)" />
+  </g>
+  <!-- gear -->
+  <g transform="translate(120,24)">
+    <circle cx="42" cy="42" r="22" fill="#0f172a" />
+    <g fill="#fff" transform="translate(42,42)">
+      <path d="M-6 -24 L6 -24 L10 -16 L18 -12 L16 -2 L24 4 L20 14 L10 12 L6 20 L-6 20 L-10 12 L-20 14 L-24 4 L-16 -2 L-18 -12 L-10 -16 Z" />
+    </g>
+  </g>
+  <!-- text -->
+  <g transform="translate(200,44)">
+    <text x="0" y="0" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a">StoreManage</text>
+    <text x="0" y="28" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">POS • Stock • Analytics</text>
+  </g>
+</svg>
+
+<!-- Variant C: Minimal monogram (SMS) badge -->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="140" viewBox="0 0 480 140" role="img" aria-labelledby="titleC">
+  <title id="titleC">StoreManage logo variant C</title>
+  <defs>
+    <linearGradient id="gC" x1="0" x2="1">
+      <stop offset="0" stop-color="#10b981" />
+      <stop offset="1" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(24,12)">
+    <rect x="0" y="0" width="92" height="92" rx="18" fill="url(#gC)" />
+    <text x="46" y="60" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="800" fill="#ffffff" text-anchor="middle">SMS</text>
+  </g>
+  <g transform="translate(140,36)">
+    <text x="0" y="0" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a">StoreManage</text>
+    <text x="0" y="28" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Simplify store operations</text>
+  </g>
+</svg>
+
+<!-- Usage notes:
+  - Each SVG is standalone; copy the desired <svg>...</svg> block into your project.
+  - Replace the text content (StoreManage) or change gradient colors to match your brand.
+  - The file is vector and scales without loss of quality.
+-->
