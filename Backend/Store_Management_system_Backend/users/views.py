@@ -96,3 +96,27 @@ def change_password(request):
         return Response({"status": "error", "message": str(e)}, status=500)
     return Response({"status": "success", "message": "User Password Changed successfully"}, status=200)
 
+
+"""
+data will be like this 
+{
+    "username": "testuser",
+}
+"""
+@api_view(['POST'])
+def delete_user(request):
+    username = request.data.get("username")
+    if not username:
+        return Response({"status": "error", "message": "Username is required"}, status=400)
+    try:
+        user = User.objects(username=username).first()
+        if not user:
+            return Response({"status": "error", "message": "User not found"}, status=404)
+        if user.role == "Admin":
+            return Response({"status": "error", "message": "Cannot delete admin user"}, status=403)
+        # Delete the user
+        user.delete()
+        return Response({"status": "success", "message": "User deleted successfully"}, status=200)
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=500)
+
