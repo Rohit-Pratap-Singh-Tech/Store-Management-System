@@ -35,17 +35,24 @@ def login_user(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-    if user and check_password(password, user.password):
-        # Handle Enum or string role
+    if user and password == user.password:
         role_value = user.role.value if hasattr(user.role, 'value') else user.role
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
         return Response({
             "status": "success",
             "full_name": user.full_name,
             "username": user.username,
-            "role": role_value
+            "role": role_value,
+            "access": access_token,
+            "refresh": refresh_token
         }, status=200)
-    else:
-        return Response({"status": "error", "message": "Invalid credentials"}, status=401)
+
+    return Response({"status": "error", "message": "Invalid credentials"}, status=401)
 
 
 

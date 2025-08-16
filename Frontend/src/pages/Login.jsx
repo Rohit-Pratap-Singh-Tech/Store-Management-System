@@ -16,8 +16,10 @@ const THEME = {
   muted: '#7B8CA7',
 }
 
+const VALID_ROLES = ["Admin", "Manager", "Cashier", "Inventory Manager"]
+
 const Login = () => {
-  const selectedRole = localStorage.getItem("selectedRole") || "";
+  const selectedRole = localStorage.getItem("selectedRole") || ""
   const [userData, setData] = useState({ username:'', password:'' })
   const [error, setError] = useState("")
   const location = useLocation()
@@ -28,34 +30,50 @@ const Login = () => {
       [e.target.name]: e.target.value,
     })
   }
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+  
+    const trimmedData = {
+      username: userData.username.trim(),
+      password: userData.password.trim(),
+    }
+  
+    if (trimmedData.password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+  
     try {
-      const res = await axios.post('http://127.0.0.1:8000/users/login/', userData)
-
-      if (selectedRole && res.data.role !== selectedRole) {
-        setError(`Please enter ${selectedRole} credentials`);
-        return;
+      const res = await axios.post('http://127.0.0.1:8000/users/login/', trimmedData)
+  
+      if (!VALID_ROLES.includes(res.data.role)) {
+        setError("Invalid role received from server")
+        return
       }
-
+  
+      const selectedRole = localStorage.getItem("selectedRole")
+      if (selectedRole && res.data.role !== selectedRole) {
+        setError(`Please enter ${selectedRole} credentials`)
+        return
+      }
+  
       localStorage.setItem("authToken", res.data.access)
       localStorage.setItem("refreshToken", res.data.refresh)
       localStorage.setItem("userRole", res.data.role)
-
-      if (res.data.role === "Admin") {
-        window.location.href = "/admin"
-      } else {
-        window.location.href = "/"
-      }
-
+  
+      if (res.data.role === "Admin") window.location.href = "/admin"
+      else if (res.data.role === "Manager") window.location.href = "/manager-dashboard"
+      else window.location.href = "/"
+  
       setData({ username:'', password:'' })
     } catch (err) {
       console.error(err)
       setError("Invalid username or password")
     }
   }
+  
 
   return (
     <div
@@ -65,25 +83,21 @@ const Login = () => {
         minHeight: '100vh',
       }}
     >
+      {/* Background gradients */}
       <div
         className="absolute top-0 left-0 w-full h-32 sm:h-64 pointer-events-none -z-10"
-        style={{
-          background: `radial-gradient(circle at 20% 0%, ${THEME.secondary}22 0%, transparent 70%)`
-        }}
+        style={{ background: `radial-gradient(circle at 20% 0%, ${THEME.secondary}22 0%, transparent 70%)` }}
       ></div>
       <div
         className="absolute bottom-0 right-0 w-1/2 h-32 sm:h-64 pointer-events-none -z-10"
-        style={{
-          background: `radial-gradient(circle at 80% 100%, ${THEME.primary}18 0%, transparent 80%)`
-        }}
+        style={{ background: `radial-gradient(circle at 80% 100%, ${THEME.primary}18 0%, transparent 80%)` }}
       ></div>
       <div
         className="absolute top-1/2 left-0 w-1/3 h-16 sm:h-32 pointer-events-none -z-10"
-        style={{
-          background: `radial-gradient(circle at 0% 50%, ${THEME.bgDark}33 0%, transparent 80%)`
-        }}
+        style={{ background: `radial-gradient(circle at 0% 50%, ${THEME.bgDark}33 0%, transparent 80%)` }}
       ></div>
 
+      {/* Login card */}
       <div
         className="w-full max-w-sm sm:max-w-md shadow-2xl rounded-2xl p-6 sm:p-8 border backdrop-blur-md"
         style={{
@@ -97,20 +111,16 @@ const Login = () => {
             alt="Store Management System Logo"
             src="/logo.svg"
             className="h-16 sm:h-20 w-auto mb-3"
-            style={{
-              filter: `drop-shadow(0 4px 16px ${THEME.accent}33)`
-            }}
+            style={{ filter: `drop-shadow(0 4px 16px ${THEME.accent}33)` }}
           />
           <h3
             className="text-base sm:text-lg font-bold tracking-tight text-center mb-2"
             style={{ color: THEME.primary, letterSpacing: '0.01em' }}
           >
-            {selectedRole
-              ? `Sign in as ${selectedRole}`
-              : "Sign in to your account"}
+            {selectedRole ? `Sign in as ${selectedRole}` : "Sign in to your account"}
           </h3>
         </div>
-        
+
         <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
           <div>
             <label htmlFor="username" className="block text-xs font-semibold mb-1" style={{ color: THEME.primary }}>
@@ -135,7 +145,7 @@ const Login = () => {
               }}
             />
           </div>
-          
+
           <div>
             <label htmlFor="password" className="block text-xs font-semibold mb-1" style={{ color: THEME.primary }}>
               Password
@@ -168,7 +178,7 @@ const Login = () => {
           {error && (
             <p className="text-xs font-semibold text-red-600">{error}</p>
           )}
-          
+
           <div>
             <button
               type="submit"
@@ -183,22 +193,13 @@ const Login = () => {
             </button>
           </div>
         </form>
-        
-        {/*<p className="mt-6 text-center text-xs sm:text-sm" style={{ color: THEME.muted }}>
-          Don't have an account?{' '}
-          <a
-            href="/signup"
-            className="font-semibold transition"
-            style={{ color: THEME.primary }}
-          >
-            Sign up here
-          </a>
-        </p>*/}
+
         <p className="mt-3 text-center text-xs font-medium" style={{ color: THEME.secondary }}>
           Store Management System
         </p>
       </div>
 
+      {/* Decorative SVGs */}
       <svg
         className="absolute top-6 sm:top-10 left-6 sm:left-10 w-8 h-8 sm:w-12 sm:h-12 opacity-20 pointer-events-none -z-10"
         fill="none"
