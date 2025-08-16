@@ -2,6 +2,26 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import User
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.hashers import check_password
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    user = request.user
+    return Response({
+        "username": user.username,
+        "role": user.role,
+    })
+
+
+
 @api_view(['POST'])
 def login_user(request):
     username = request.data.get("username")
@@ -11,12 +31,12 @@ def login_user(request):
         return Response({"status": "error", "message": "Username and password required"}, status=400)
 
     try:
-        user = User.objects(username=username, password=password).first()
+        user = User.objects(username=username).first()
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-    if user:
-        # Handle both Enum and plain string for role
+    if user and check_password(password, user.password):
+        # Handle Enum or string role
         role_value = user.role.value if hasattr(user.role, 'value') else user.role
         return Response({
             "status": "success",
@@ -26,6 +46,7 @@ def login_user(request):
         }, status=200)
     else:
         return Response({"status": "error", "message": "Invalid credentials"}, status=401)
+
 
 
 # front should have logic to check if the user is logged in and is an admin
@@ -62,6 +83,8 @@ def register_staff(request):
             return Response({"status": "success", "message": "User registered successfully"}, status=201)
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
+
+
 
 """
 Data will be like this 
