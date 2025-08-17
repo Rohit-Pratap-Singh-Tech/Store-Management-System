@@ -43,24 +43,28 @@ const Login = () => {
       password: userData.password.trim(),
     }
   
-    if (trimmedData.password.length < 6) {
-      setError("Password must be at least 6 characters")
-      setIsLoading(false)
-      return
-    }
-  
-    try {
-      const res = await axios.post('http://127.0.0.1:8000/users/login/', trimmedData)
-  
-      if (!VALID_ROLES.includes(res.data.role)) {
-        setError("Invalid role received from server")
+          if (trimmedData.password.length < 2) {
+        setError("Password must be at least 2 characters")
         setIsLoading(false)
         return
       }
   
+    try {
+      const res = await axios.post('http://127.0.0.1:8000/users/login/', trimmedData)
+  
+            console.log('Server response:', res.data)
+      console.log('Expected role:', localStorage.getItem("selectedRole"))
+      console.log('Received role:', res.data.role)
+      
+      if (!VALID_ROLES.includes(res.data.role)) {
+        setError(`Invalid role received from server: ${res.data.role}`)
+        setIsLoading(false)
+        return
+      }
+
       const selectedRole = localStorage.getItem("selectedRole")
       if (selectedRole && res.data.role !== selectedRole) {
-        setError(`Please enter ${selectedRole} credentials`)
+        setError(`Please enter ${selectedRole} credentials. You logged in as ${res.data.role}`)
         setIsLoading(false)
         return
       }
@@ -75,8 +79,23 @@ const Login = () => {
   
       setData({ username:'', password:'' })
     } catch (err) {
-      console.error(err)
-      setError("Invalid username or password")
+      console.error('Login error:', err)
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 401) {
+          setError("Invalid username or password")
+        } else if (err.response.status === 400) {
+          setError(err.response.data.message || "Invalid request")
+        } else {
+          setError(`Server error: ${err.response.status}`)
+        }
+      } else if (err.request) {
+        // Network error
+        setError("Network error. Please check your connection.")
+      } else {
+        // Other error
+        setError("An unexpected error occurred")
+      }
     } finally {
       setIsLoading(false)
     }

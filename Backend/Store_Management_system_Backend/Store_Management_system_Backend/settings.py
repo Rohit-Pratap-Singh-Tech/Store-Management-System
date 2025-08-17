@@ -80,27 +80,21 @@ WSGI_APPLICATION = 'Store_Management_system_Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'djongo',
+        'NAME': 'Store_Management_System',
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+            'host': 'mongodb://127.0.0.1:27017',
+        }
     }
 }
 
-# MongoDB configuration (commented out)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'djongo',
-#         'NAME': 'Store_Management_System',
-#         'ENFORCE_SCHEMA': False,
-#         'CLIENT': {
-#             'host': 'mongodb://127.0.0.1:27017',
-#         }
-#     }
-# }
-
-# connect(
-#     db="Store_Management_System",
-#     host="mongodb://localhost:27017/Store_Management_System"
-# )
+# MongoDB connection setup
+import mongoengine
+mongoengine.connect(
+    db="Store_Management_System",
+    host="mongodb://localhost:27017/Store_Management_System"
+)
 
 
 # Password validation

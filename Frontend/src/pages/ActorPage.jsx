@@ -45,7 +45,7 @@ const ActorPage = () => {
       title: 'Inventory Manager',
       description: 'Track stock levels, manage suppliers, and optimize inventory workflows',
       icon: '�',
-      roleValue: 'InventoryManager',
+      roleValue: 'Inventory Manager',
       gradient: 'from-purple-400 to-violet-500',
       bgGradient: 'from-purple-50 to-violet-50',
       borderColor: 'border-purple-200',

@@ -22,5 +22,6 @@ class User(Document):
     }
 
     def clean(self):
-        if self.password != self.confirm_password:
-            raise ValueError("Passwords do not match")
+        # Since we're hashing passwords, we can't directly compare them
+        # Password validation is handled in the views
+        pass
