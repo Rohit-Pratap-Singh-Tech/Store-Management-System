@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-from mongoengine import connect
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -81,19 +80,27 @@ WSGI_APPLICATION = 'Store_Management_system_Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'Store_Management_System',
-        'ENFORCE_SCHEMA': False,
-        'CLIENT': {
-            'host': 'mongodb://127.0.0.1:27017',
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-connect(
-    db="Store_Management_System",
-    host="mongodb://localhost:27017/Store_Management_System"
-)
+# MongoDB configuration (commented out)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'Store_Management_System',
+#         'ENFORCE_SCHEMA': False,
+#         'CLIENT': {
+#             'host': 'mongodb://127.0.0.1:27017',
+#         }
+#     }
+# }
+
+# connect(
+#     db="Store_Management_System",
+#     host="mongodb://localhost:27017/Store_Management_System"
+# )
 
 
 # Password validation

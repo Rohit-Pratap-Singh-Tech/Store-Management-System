@@ -7,11 +7,17 @@ import Footer from '../components/Footer'
 
 const Landingpage = () => {
   return (
-    <div>
+    <div className="min-h-screen">
         <Navbar/>
-        <Hero />
-        <ActorPage />
-        <BillingProcessPage />
+        <div className="pt-20"> {/* Add padding to account for fixed navbar */}
+          <Hero />
+          <div id="features">
+            <ActorPage />
+          </div>
+          <div id="about">
+            <BillingProcessPage />
+          </div>
+        </div>
         <Footer />
     </div>
   )
