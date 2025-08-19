@@ -1,31 +1,35 @@
-# api/models.py
-from django.db import models
+from mongoengine import Document, StringField, DecimalField, IntField, ReferenceField, DateTimeField
 from django.conf import settings
+import datetime
 
-class Category(models.Model):
-    category_name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(null=True, blank=True)
+
+class Category(Document):
+    category_name = StringField(required=True, unique=True, max_length=100)
+    description = StringField()
 
     def __str__(self):
         return self.category_name
 
-class Product(models.Model):
-    product_name = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity_in_stock = models.IntegerField(default=0)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    last_updated = models.DateTimeField(auto_now=True)
+
+class Product(Document):
+    product_name = StringField(required=True, max_length=255)
+    price = DecimalField(precision=2, required=True)
+    quantity_in_stock = IntField(default=0)
+    category = ReferenceField(Category, reverse_delete_rule=2)  # CASCADE
+    last_updated = DateTimeField(default=datetime.datetime.utcnow)
 
     def __str__(self):
         return self.product_name
 
-class Sale(models.Model):
-    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    sale_date = models.DateTimeField(auto_now_add=True)
 
-class Transaction(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='transactions')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity_sold = models.IntegerField()
-    price_at_sale = models.DecimalField(max_digits=10, decimal_places=2)
+class Sale(Document):
+    employee = StringField(required=True)  # use user_id / username since AUTH_USER_MODEL is Django ORM
+    total_amount = DecimalField(precision=2, required=True)
+    sale_date = DateTimeField(default=datetime.datetime.utcnow)
+
+
+class Transaction(Document):
+    sale = ReferenceField(Sale, reverse_delete_rule=2)  # CASCADE
+    product = ReferenceField(Product, reverse_delete_rule=2)
+    quantity_sold = IntField(required=True)
+    price_at_sale = DecimalField(precision=2, required=True)

@@ -9,16 +9,15 @@ urlpatterns = [
     # path('product/list', views.product_list, name='product_list'),
     # path('product/search', views.product_search, name='product_search'),
     # path('product/stock', views.product_stock, name='product_stock'),
-    # path('product/stock/update', views.product_stock_update, name='product_stock_update'),
-    # path('product/stock/delete', views.product_stock_delete, name='product_stock_delete'),
-    #
+
+
     # # Category URLs
-    # path('category/add', views.category_add, name='category_add'),
-    # path('category/update', views.category_update, name='category_update'),
-    # path('category/delete', views.category_delete, name='category_delete'),
-    # path('category/list', views.category_list, name='category_list'),
-    # path('category/search', views.category_search, name='category_search'),
-    #
+    path('category/add', views.category_add, name='category_add'),
+    path('category/update', views.category_update, name='category_update'),
+    path('category/delete', views.category_delete, name='category_delete'),
+    path('category/list', views.category_list, name='category_list'),
+    path('category/search', views.category_search, name='category_search'),
+
     # # Sales URLs
     # path('sale/add', views.sale_add, name='sale_add'),
     # path('sale/list', views.sale_list, name='sale_list'),
