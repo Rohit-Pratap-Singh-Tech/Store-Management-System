@@ -237,6 +237,32 @@ def product_list(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
+'''
+{
+    "product_name": "Laptop2"
+}
+'''
+@api_view(['GET'])
+def product_search(request):
+    product_name = request.data.get('product_name')
+    if not product_name:
+        return Response({"status": "error", "message": "Product name is required"}, status=400)
+
+    try:
+        product = Product.objects.get(product_name=product_name)
+        return Response({
+            "status": "success",
+            "product": {
+                "product_name": product.product_name,
+                "price": str(product.price),
+                "category": product.category.category_name if product.category else None,
+                "quantity_in_stock": product.quantity_in_stock,
+                "last_updated": product.last_updated.isoformat() if product.last_updated else None
+            }
+        }, status=200)
+    except DoesNotExist:
+        return Response({"status": "error", "message": "Product not found"}, status=404)
+
 #
 # # -------------------- SALE API --------------------
 #
