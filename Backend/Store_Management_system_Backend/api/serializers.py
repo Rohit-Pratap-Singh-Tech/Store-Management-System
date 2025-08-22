@@ -6,6 +6,7 @@ class CategorySerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
     category_name = serializers.CharField(max_length=100)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    location = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
 
     def validate_category_name(self, value):
         if Category.objects(category_name=value).first():
@@ -25,6 +26,7 @@ class ProductSerializer(serializers.Serializer):
     quantity_in_stock = serializers.IntegerField(required=False)
     category = serializers.CharField(required=False, allow_null=True)
     last_updated = serializers.DateTimeField(required=False)
+    location = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
 
 
 class SaleSerializer(serializers.Serializer):

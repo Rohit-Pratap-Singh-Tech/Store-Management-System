@@ -56,7 +56,9 @@ def category_delete(request):
 def category_update(request):
     category_name = request.data.get('category_name')
     new_category_name = request.data.get('new_category_name')
+    new_location = request.data.get('new_location', '')
     description = request.data.get('description', '')
+
 
     if not category_name or not new_category_name:
         return Response({"status": "error", "message": "Category name and new category name are required"}, status=400)
@@ -64,10 +66,10 @@ def category_update(request):
     try:
         if Category.objects(category_name=new_category_name).first() and category_name != new_category_name:
             return Response({"status": "error", "message": "Category with new name already exists"}, status=409)
-
         category = Category.objects.get(category_name=category_name)
         category.category_name = new_category_name
         category.description = description
+        category.location = new_location if new_location else category.location
         category.save()
         return Response({"status": "success", "message": "Category updated successfully"}, status=200)
     except DoesNotExist:
@@ -131,6 +133,7 @@ def product_add(request):
     price = request.data.get('price')
     category_name = request.data.get('category_name')
     quantity_in_stock = request.data.get('quantity_in_stock')
+    location = request.data.get('location', '')
 
     if not all([product_name, price, category_name, quantity_in_stock is not None]):
         return Response(
@@ -147,7 +150,8 @@ def product_add(request):
             product_name=product_name,
             price=Decimal(str(price)),
             category=category,
-            quantity_in_stock=int(quantity_in_stock)
+            quantity_in_stock=int(quantity_in_stock),
+            location=location
         )
         product.save()
         return Response({"status": "success", "message": "Product added successfully"}, status=201)
@@ -182,15 +186,17 @@ def product_delete(request):
     "price": 1299.99,                 // Optional: New price for the product
     "category_name": "Electronics",    // Optional: New category for the product
     "quantity_in_stock": 15           // Optional: New stock quantity
+    "location": "Aisle 3"              // Optional: New location for the product
 }
 '''
 @api_view(['PUT'])
 def product_update(request):
     product_name = request.data.get('product_name')
     new_product_name = request.data.get('new_product_name')
-    price = request.data.get('price')
+    new_price = request.data.get('price')
     category_name = request.data.get('category_name')
     quantity_in_stock = request.data.get('quantity_in_stock')
+    new_location = request.data.get('location', '')
 
     if not product_name:
         return Response({"status": "error", "message": "Product name is required"}, status=400)
@@ -203,8 +209,8 @@ def product_update(request):
                 return Response({"status": "error", "message": "New product name already exists"}, status=409)
             product.product_name = new_product_name
 
-        if price is not None:
-            product.price = Decimal(str(price))
+        if new_price is not None:
+            product.price = Decimal(str(new_price))
 
         if category_name:
             category = Category.objects.get(category_name=category_name)
@@ -212,6 +218,9 @@ def product_update(request):
 
         if quantity_in_stock is not None:
             product.quantity_in_stock = int(quantity_in_stock)
+
+        if new_location:
+            product.location = new_location
 
         product.save()
         return Response({"status": "success", "message": "Product updated successfully"}, status=200)
@@ -230,6 +239,7 @@ def product_list(request):
                 "category": p.category.category_name if p.category else None,
                 "quantity_in_stock": p.quantity_in_stock,
                 "last_updated": p.last_updated.isoformat() if p.last_updated else None
+                "location": p.location
             }
             for p in products
         ]
@@ -257,7 +267,8 @@ def product_search(request):
                 "price": str(product.price),
                 "category": product.category.category_name if product.category else None,
                 "quantity_in_stock": product.quantity_in_stock,
-                "last_updated": product.last_updated.isoformat() if product.last_updated else None
+                "last_updated": product.last_updated.isoformat() if product.last_updated else None,
+                "location": product.location
             }
         }, status=200)
     except DoesNotExist:
