@@ -50,7 +50,8 @@ def category_delete(request):
 '''{
     "category_name": "Electronics",
     "new_category_name":"Computer",
-    "description": "Gadgets, devices, and accessories."
+    "description": "Gadgets, devices, and accessories.",
+    "new_location": "Aisle 1"
 }'''
 @api_view(['PUT'])
 def category_update(request):
@@ -103,7 +104,8 @@ def category_search(request):
             {
                 "product_name": product.product_name,
                 "price": str(product.price),
-                "quantity_in_stock": product.quantity_in_stock
+                "quantity_in_stock": product.quantity_in_stock,
+                "location": product.location
             } for product in products
         ]
         return Response({
@@ -125,7 +127,8 @@ def category_search(request):
     "product_name": "Computer1",
     "price": 999.99,
     "category_name": "Computer",
-    "quantity_in_stock": 10
+    "quantity_in_stock": 10,
+    "location": "Aisle 3"
 }'''
 @api_view(['POST'])
 def product_add(request):
@@ -238,7 +241,6 @@ def product_list(request):
                 "price": str(p.price),
                 "category": p.category.category_name if p.category else None,
                 "quantity_in_stock": p.quantity_in_stock,
-                "last_updated": p.last_updated.isoformat() if p.last_updated else None
                 "location": p.location
             }
             for p in products
