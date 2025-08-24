@@ -4,6 +4,9 @@ import LandingPage from './pages/Landingpage.jsx'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import AdminDashboard from './pages/AdminDashboard.jsx'
+import InventoryDashboard from './pages/InventoryDashboard.jsx'
+import ManagerDashboard from './pages/ManagerDashboard.jsx'
+import CashierDashboard from './pages/CashierDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -31,6 +34,36 @@ function App() {
           element={
             <ProtectedRoute requiredRole="Admin">
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Inventory dashboard - only Inventory Manager */}
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute requiredRole={["Inventory Manager", "Admin"]}>
+              <InventoryDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Manager dashboard - only Manager */}
+        <Route
+          path="/manager"
+          element={
+            <ProtectedRoute requiredRole={["Manager", "Admin"]}>
+              <ManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Cashier dashboard - allow both Cashier and Admin */}
+        <Route
+          path="/cashier"
+          element={
+            <ProtectedRoute requiredRole={["Cashier", "Admin"]}>
+              <CashierDashboard />
             </ProtectedRoute>
           }
         />

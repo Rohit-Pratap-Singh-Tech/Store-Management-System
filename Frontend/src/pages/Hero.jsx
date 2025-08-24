@@ -26,7 +26,7 @@ const Hero = () => {
 
           {/* Main Heading */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 mb-8 leading-tight">
-            Next-Gen Store
+            Super Market Store
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
               Management
             </span>

@@ -4,6 +4,10 @@ import Hero from './Hero'
 import ActorPage from './ActorPage'
 import BillingProcessPage from './BillingProcessPage'
 import Footer from '../components/Footer'
+import SupermarketMap from '../components/SupermarketMap'
+import InventoryDashboard from './InventoryDashboard'
+import CashierDashboard from './CashierDashboard'
+import ManagerDashboard from './ManagerDashboard'
 
 const Landingpage = () => {
   return (
@@ -16,6 +20,9 @@ const Landingpage = () => {
           </div>
           <div id="about">
             <BillingProcessPage />
+          </div>
+          <div id="map">
+            <SupermarketMap />
           </div>
         </div>
         <Footer />
