@@ -55,6 +55,8 @@ const Login = () => {
             console.log('Server response:', res.data)
       console.log('Expected role:', localStorage.getItem("selectedRole"))
       console.log('Received role:', res.data.role)
+      console.log('Role type:', typeof res.data.role)
+      console.log('Role length:', res.data.role ? res.data.role.length : 'undefined')
       
       if (!VALID_ROLES.includes(res.data.role)) {
         setError(`Invalid role received from server: ${res.data.role}`)
@@ -72,9 +74,20 @@ const Login = () => {
       localStorage.setItem("authToken", res.data.access)
       localStorage.setItem("refreshToken", res.data.refresh)
       localStorage.setItem("userRole", res.data.role)
+      localStorage.setItem("fullName", res.data.full_name)
+      localStorage.setItem("username", res.data.username)
+      
+      console.log('Stored in localStorage:', {
+        authToken: !!res.data.access,
+        userRole: res.data.role,
+        fullName: res.data.full_name,
+        username: res.data.username
+      })
   
       if (res.data.role === "Admin") window.location.href = "/admin"
-      else if (res.data.role === "Manager") window.location.href = "/manager-dashboard"
+      else if (res.data.role === "Manager") window.location.href = "/manager"
+      else if (res.data.role === "Cashier") window.location.href = "/cashier"
+      else if (res.data.role === "Inventory Manager") window.location.href = "/inventory"
       else window.location.href = "/"
   
       setData({ username:'', password:'' })

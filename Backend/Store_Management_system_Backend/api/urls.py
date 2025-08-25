@@ -12,6 +12,7 @@ urlpatterns = [
 
     # # Category URLs
     path('category/add', views.category_add, name='category_add'),
+    path('category_add', views.category_add, name='category_add_alt'),  # Alternative URL for compatibility
     path('category/update', views.category_update, name='category_update'),
     path('category/delete', views.category_delete, name='category_delete'),
     path('category/list', views.category_list, name='category_list'),

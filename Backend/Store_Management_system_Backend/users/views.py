@@ -24,7 +24,6 @@ def me(request):
     })
 
 
-
 @api_view(['POST'])
 def login_user(request):
     username = request.data.get("username")

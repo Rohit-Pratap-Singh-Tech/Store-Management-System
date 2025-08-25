@@ -1,54 +1,173 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { logout } from "../auth"; 
+import { logout } from "../auth";
+import { dashboardAPI, userAPI, healthCheck } from '../services/api';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [notifications, setNotifications] = useState(3)
+  const [activeTab, setActiveTab] = useState('overview');
+  const [notifications, setNotifications] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
   const [stats, setStats] = useState({
-    totalSales: 125840,
-    totalOrders: 1247,
-    totalCustomers: 892,
-    totalProducts: 456,
-    revenue: 89250,
-    profit: 12580
-  })
+    totalSales: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    totalProducts: 0,
+    revenue: 0,
+    profit: 0,
+    lowStockItems: 0,
+    outOfStockItems: 0
+  });
 
-  // Simulate real-time updates
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [salesStats, setSalesStats] = useState({
+    totalSales: 0,
+    totalTransactions: 0,
+    averageTicket: 0,
+    itemsSold: 0,
+    recentTransactions: []
+  });
+
   useEffect(() => {
-    const interval = setInterval(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setStaffLoading(true);
+
+      // Fetch inventory and sales stats
+      const [inventoryStats, salesData] = await Promise.all([
+        dashboardAPI.getInventoryStats(),
+        dashboardAPI.getSalesStats()
+      ]);
+
       setStats(prev => ({
         ...prev,
-        totalSales: prev.totalSales + Math.floor(Math.random() * 100),
-        totalOrders: prev.totalOrders + Math.floor(Math.random() * 5)
-      }))
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+        totalProducts: inventoryStats.totalProducts || 0,
+        lowStockItems: inventoryStats.lowStockItems || 0,
+        outOfStockItems: inventoryStats.outOfStockItems || 0
+      }));
+
+      setSalesStats({
+        totalSales: salesData.totalSales || 0,
+        totalTransactions: salesData.totalTransactions || 0,
+        averageTicket: salesData.averageTicket || 0,
+        itemsSold: salesData.itemsSold || 0,
+        recentTransactions: Array.isArray(salesData.recentTransactions) ? salesData.recentTransactions : []
+      });
+
+      // Top products by stock
+      if (Array.isArray(inventoryStats.products) && inventoryStats.products.length > 0) {
+        const sortedProducts = inventoryStats.products
+          .sort((a, b) => b.quantity_in_stock - a.quantity_in_stock)
+          .slice(0, 4)
+          .map(product => ({
+            name: product.product_name,
+            sales: product.quantity_in_stock,
+            revenue: `$${parseFloat(product.price).toFixed(2)}`
+          }));
+        setTopProducts(sortedProducts);
+      } else {
+        setTopProducts([]);
+      }
+
+      // Recent activities (example: from backend if available)
+      if (Array.isArray(inventoryStats.activities)) {
+        setRecentActivities(inventoryStats.activities);
+      } else {
+        setRecentActivities([]);
+      }
+
+      // Fetch staff members from backend
+      try {
+        const staffResponse = await userAPI.getAllUsers();
+        if (staffResponse && Array.isArray(staffResponse.users)) {
+          setStaffMembers(staffResponse.users);
+          setNotifications(staffResponse.users.filter(u => u.status && u.status.toLowerCase() !== "active").length);
+        } else {
+          setStaffMembers([]);
+          setNotifications(0);
+        }
+      } catch (error) {
+        setStaffMembers([]);
+        setNotifications(0);
+        showMessage('Failed to fetch staff data from backend. Please check your connection.', 'error');
+      } finally {
+        setStaffLoading(false);
+      }
+
+    } catch (error) {
+      setRecentActivities([]);
+      setTopProducts([]);
+      setStaffMembers([]);
+      setNotifications(0);
+      showMessage('Failed to fetch dashboard data. Please check your backend connection.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const sidebarItems = [
     { id: 'overview', name: 'Overview', icon: '📊' },
     { id: 'sales', name: 'Sales Analytics', icon: '💰' },
-    { id: 'inventory', name: 'Inventory', icon: '📦' },
-    { id: 'customers', name: 'Customers', icon: '👥' },
-    { id: 'staff', name: 'Staff Management', icon: '👨‍💼' },
-    { id: 'reports', name: 'Reports', icon: '📈' },
-    { id: 'settings', name: 'Settings', icon: '⚙️' }
-  ]
+    { id: 'staff', name: 'Staff Management', icon: '👥' },
+    { id: 'reports', name: 'Reports', icon: '📈' }
+  ];
 
-  const recentActivities = [
-    { id: 1, action: 'New order placed', user: 'Customer #892', time: '2 minutes ago', type: 'order' },
-    { id: 2, action: 'Staff member added', user: 'John Doe', time: '15 minutes ago', type: 'staff' },
-    { id: 3, action: 'Inventory updated', user: 'System', time: '1 hour ago', type: 'inventory' },
-    { id: 4, action: 'Payment processed', user: 'Customer #845', time: '2 hours ago', type: 'payment' }
-  ]
+  const showMessage = (message, type = 'success') => {
+    setMessage(message);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), 3000);
+  };
 
-  const topProducts = [
-    { name: 'Wireless Headphones', sales: 245, revenue: '$12,250' },
-    { name: 'Smart Watch', sales: 189, revenue: '$18,900' },
-    { name: 'Laptop Stand', sales: 156, revenue: '$4,680' },
-    { name: 'USB Cable', sales: 298, revenue: '$2,980' }
-  ]
+  const handleStaffDelete = async (staffName, staffId) => {
+    if (window.confirm(`Are you sure you want to delete ${staffName}?`)) {
+      try {
+        await userAPI.deleteUser(staffId);
+        showMessage(`${staffName} has been removed from the system.`, 'success');
+        fetchDashboardData();
+      } catch (err) {
+        showMessage(`Failed to delete ${staffName}.`, 'error');
+      }
+    }
+  };
+
+  const hasRequiredRole = (requiredRoles) => {
+    const userRole = localStorage.getItem('userRole');
+    return requiredRoles.includes(userRole);
+  };
+
+  const handleInventoryAccess = () => {
+    const userRole = localStorage.getItem('userRole');
+    if (hasRequiredRole(['Admin', 'Manager'])) {
+      showMessage('Accessing Inventory Management...', 'success');
+      setTimeout(() => {
+        window.location.href = '/manager';
+      }, 1000);
+    } else {
+      showMessage(`Access denied. Admin or Manager privileges required. Current role: ${userRole || 'Not set'}`, 'error');
+    }
+  };
+
+  const handlePOSAccess = () => {
+    const userRole = localStorage.getItem('userRole');
+    if (hasRequiredRole(['Admin', 'Manager'])) {
+      showMessage('Accessing POS System...', 'success');
+      setTimeout(() => {
+        window.location.href = '/cashier';
+      }, 1000);
+    } else {
+      showMessage(`Access denied. Admin or Manager privileges required. Current role: ${userRole || 'Not set'}`, 'error');
+    }
+  };
+
+  // Removed setAdminRole and getCurrentRoleStatus
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -99,214 +218,397 @@ const AdminDashboard = () => {
             <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
               <span className="text-white font-bold">👤</span>
             </div>
-            <div>
-              <p className="font-semibold text-slate-800">Admin User</p>
-              <p className="text-sm text-slate-500">admin@store.com</p>
+            <div className="flex-1">
+              <p className="font-semibold text-slate-800">
+                {localStorage.getItem('fullName') || 'Admin User'}
+              </p>
+              <p className="text-sm text-slate-500">
+                {localStorage.getItem('username') || 'admin@store.com'}
+              </p>
+              <p className="text-xs text-slate-400">
+                Role: {localStorage.getItem('userRole') || 'Admin'}
+              </p>
             </div>
           </div>
-          
-          <Link
-            to="/signup"
-            className="block w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-center mb-2"
-          >
-            Add Staff
-          </Link>
-          
           <button
             onClick={logout}
-            className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
           >
-            Logout
+            <span>🚪</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* Enhanced Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {/* Top Header */}
-        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-white/20 p-6">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-white/20 p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 capitalize">
-                {activeTab === 'overview' ? 'Dashboard Overview' : activeTab.replace('-', ' ')}
+              <h1 className="text-3xl font-bold text-slate-800">
+                {activeTab === 'overview' && 'Dashboard Overview'}
+                {activeTab === 'sales' && 'Sales Analytics'}
+                {activeTab === 'staff' && 'Staff Management'}
+                {activeTab === 'reports' && 'Reports & Analytics'}
               </h1>
-              <p className="text-slate-600 mt-1">Welcome back! Here's what's happening today.</p>
+              <p className="text-slate-600 mt-1">
+                {activeTab === 'overview' && 'Monitor your store performance and key metrics'}
+                {activeTab === 'sales' && 'Track sales performance and revenue analytics'}
+                {activeTab === 'staff' && 'Manage staff accounts and permissions'}
+                {activeTab === 'reports' && 'Generate detailed reports and analytics'}
+              </p>
             </div>
-            
             <div className="flex items-center space-x-4">
-              {/* Search */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <span className="text-2xl">📊</span>
               </div>
-              
-              {/* Notifications */}
-              <button className="relative p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5z"/>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17V3a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h6z"/>
-                </svg>
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </button>
-              
-              <Link
-                to="/"
-                className="px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
-              >
-                🏠 Home
-              </Link>
+              {/* Role Status Display removed */}
             </div>
           </div>
         </header>
 
+        {/* Message Display */}
+        {message && (
+          <div className={`mx-6 mt-4 p-4 rounded-lg border ${
+            messageType === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center">
+              <span className="text-lg mr-2">
+                {messageType === 'success' ? '✅' : '❌'}
+              </span>
+              <span className="font-medium">{message}</span>
+            </div>
+          </div>
+        )}
+
         {/* Content Area */}
-        <div className="p-6 overflow-y-auto h-[calc(100vh-100px)]">
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-600 text-sm font-medium">Total Sales</p>
-                      <p className="text-2xl font-bold text-slate-800">${stats.totalSales.toLocaleString()}</p>
-                      <p className="text-emerald-600 text-sm">↗ +12.5% from last week</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                      💰
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-600 text-sm font-medium">Total Orders</p>
-                      <p className="text-2xl font-bold text-slate-800">{stats.totalOrders.toLocaleString()}</p>
-                      <p className="text-blue-600 text-sm">↗ +8.2% from last week</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                      📋
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-600 text-sm font-medium">Customers</p>
-                      <p className="text-2xl font-bold text-slate-800">{stats.totalCustomers.toLocaleString()}</p>
-                      <p className="text-purple-600 text-sm">↗ +15.3% from last week</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                      👥
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-600 text-sm font-medium">Products</p>
-                      <p className="text-2xl font-bold text-slate-800">{stats.totalProducts.toLocaleString()}</p>
-                      <p className="text-orange-600 text-sm">↗ +5.1% from last week</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                      📦
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Charts and Analytics */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Sales Chart */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Sales Analytics</h3>
-                  <div className="h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-4xl mb-4">📈</div>
-                      <p className="text-slate-600">Interactive Sales Chart</p>
-                      <p className="text-sm text-slate-500 mt-2">Chart.js integration coming soon</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Recent Activities */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Activities</h3>
-                  <div className="space-y-4">
-                    {recentActivities.map((activity) => (
-                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-slate-50/50 rounded-xl hover:bg-slate-100/50 transition-colors">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                          activity.type === 'order' ? 'bg-blue-100 text-blue-600' :
-                          activity.type === 'staff' ? 'bg-emerald-100 text-emerald-600' :
-                          activity.type === 'inventory' ? 'bg-orange-100 text-orange-600' :
-                          'bg-purple-100 text-purple-600'
-                        }`}>
-                          {activity.type === 'order' ? '📋' :
-                           activity.type === 'staff' ? '👨‍💼' :
-                           activity.type === 'inventory' ? '📦' : '💳'}
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Total Products</p>
+                          <p className="text-2xl font-bold text-slate-800">{stats.totalProducts}</p>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-slate-800">{activity.action}</p>
-                          <p className="text-sm text-slate-600">{activity.user}</p>
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">📦</span>
                         </div>
-                        <p className="text-xs text-slate-500">{activity.time}</p>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Total Sales</p>
+                          <p className="text-2xl font-bold text-slate-800">${salesStats.totalSales.toFixed(2)}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">💰</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Low Stock Items</p>
+                          <p className="text-2xl font-bold text-orange-600">{stats.lowStockItems}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">⚠️</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Staff Members</p>
+                          <p className="text-2xl font-bold text-slate-800">{staffMembers.length}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">👥</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Activities and Top Products */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Activities</h3>
+                      <div className="space-y-3">
+                        {recentActivities.length > 0 ? (
+                          recentActivities.map((activity, idx) => (
+                            <div key={activity.id || idx} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span className="text-sm">📝</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium text-slate-800">{activity.action || activity.description || 'Activity'}</p>
+                                <p className="text-sm text-slate-600">{activity.user || 'System'} • {activity.time || ''}</p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-slate-600">No recent activities</p>
+                            <p className="text-sm text-slate-500 mt-2">Activities will appear here as you use the system</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <h3 className="text-lg font-semibold text-slate-800 mb-4">Top Products</h3>
+                      <div className="space-y-3">
+                        {topProducts.length > 0 ? (
+                          topProducts.map((product, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                  <span className="text-sm font-bold">{index + 1}</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-slate-800">{product.name}</p>
+                                  <p className="text-sm text-slate-600">Stock: {product.sales}</p>
+                                </div>
+                              </div>
+                              <p className="font-semibold text-slate-800">{product.revenue}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-slate-600">No products available</p>
+                            <p className="text-sm text-slate-500 mt-2">Add products to see them here</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
+                    {/* Access Control and Set Admin Role removed */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <button
+                        onClick={handleInventoryAccess}
+                        className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                      >
+                        <span className="text-2xl">📦</span>
+                        <div>
+                          <p className="font-medium text-slate-800">Manage Inventory</p>
+                          <p className="text-sm text-slate-600">Add or update products</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={handlePOSAccess}
+                        className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
+                      >
+                        <span className="text-2xl">💳</span>
+                        <div>
+                          <p className="font-medium text-slate-800">POS System</p>
+                          <p className="text-sm text-slate-600">Process transactions</p>
+                        </div>
+                      </button>
+                      <Link
+                        to="/signup"
+                        className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                      >
+                        <span className="text-2xl">👨‍💼</span>
+                        <div>
+                          <p className="font-medium text-slate-800">Add Staff Member</p>
+                          <p className="text-sm text-slate-600">Create new staff accounts</p>
+                        </div>
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Top Products */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Top Selling Products</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {topProducts.map((product, index) => (
-                    <div key={index} className="p-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-slate-200 hover:shadow-md transition-all duration-300">
-                      <h4 className="font-semibold text-slate-800">{product.name}</h4>
-                      <p className="text-sm text-slate-600 mt-1">{product.sales} units sold</p>
-                      <p className="text-lg font-bold text-blue-600 mt-2">{product.revenue}</p>
+              {activeTab === 'sales' && (
+                <div className="space-y-6">
+                  {/* Sales Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Total Sales</p>
+                          <p className="text-2xl font-bold text-slate-800">${salesStats.totalSales.toFixed(2)}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">💰</span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Other Tab Contents */}
-          {activeTab !== 'overview' && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20 text-center">
-              <div className="text-6xl mb-4">
-                {activeTab === 'sales' ? '💰' :
-                 activeTab === 'inventory' ? '📦' :
-                 activeTab === 'customers' ? '👥' :
-                 activeTab === 'staff' ? '👨‍💼' :
-                 activeTab === 'reports' ? '📈' : '⚙️'}
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2 capitalize">
-                {activeTab.replace('-', ' ')} Section
-              </h2>
-              <p className="text-slate-600 mb-6">
-                This section is under development. Coming soon with advanced features!
-              </p>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
-                <p className="text-sm text-slate-600">
-                  🚀 Features coming soon: Advanced analytics, real-time updates, interactive charts, and more!
-                </p>
-              </div>
-            </div>
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Transactions</p>
+                          <p className="text-2xl font-bold text-slate-800">{salesStats.totalTransactions}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">📊</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Average Ticket</p>
+                          <p className="text-2xl font-bold text-slate-800">${salesStats.averageTicket.toFixed(2)}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">📈</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-slate-600">Items Sold</p>
+                          <p className="text-2xl font-bold text-slate-800">{salesStats.itemsSold}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">📦</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Transactions */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Transactions</h3>
+                    <div className="space-y-3">
+                      {salesStats.recentTransactions && salesStats.recentTransactions.length > 0 ? (
+                        salesStats.recentTransactions.map((transaction) => (
+                          <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">{transaction.customer}</p>
+                              <p className="text-sm text-slate-600">{transaction.time} • {transaction.items} items</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-slate-800">${transaction.amount.toFixed(2)}</p>
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
+                                {transaction.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-slate-600">No recent transactions</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'staff' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-slate-800">Staff Management</h3>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={async () => {
+                            const isConnected = await healthCheck();
+                            if (isConnected) {
+                              showMessage('Backend is reachable!', 'success');
+                            } else {
+                              showMessage('Backend connection failed!', 'error');
+                            }
+                          }}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                        >
+                          Test Backend
+                        </button>
+                        <button
+                          onClick={() => {
+                            fetchDashboardData();
+                          }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          Refresh
+                        </button>
+                        <Link
+                          to="/signup"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Add New Staff
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      {staffLoading ? (
+                        <div className="text-center py-8">
+                          <p className="text-slate-600">Loading staff data...</p>
+                        </div>
+                      ) : staffMembers.length > 0 ? (
+                        staffMembers.map((staff, index) => (
+                          <div key={staff.id || index} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold">
+                                  {staff.full_name ? staff.full_name.split(' ').map(n => n[0]).join('') : staff.username}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800">{staff.full_name || staff.username}</p>
+                                <p className="text-sm text-slate-600">@{staff.username} • {staff.role}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
+                                {staff.status || 'Active'}
+                              </span>
+                              <button
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleStaffDelete(staff.full_name || staff.username, staff.id)}
+                              >
+                                <span className="text-lg">🗑️</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-slate-600">No staff members found</p>
+                          <p className="text-sm text-slate-500 mt-2">
+                            Add staff members using the button above or check your backend connection
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Other tabs can be implemented similarly */}
+              {activeTab !== 'overview' && activeTab !== 'staff' && activeTab !== 'sales' && (
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
+                  <p className="text-slate-600">This feature is coming soon. Stay tuned for updates!</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

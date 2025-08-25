@@ -65,7 +65,7 @@ const Navbar = () => {
           </div>
           <div className="hidden sm:block">
             <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              StoreMax
+              Super Market
             </h1>
             <p className="text-xs text-slate-500 font-medium">Management System</p>
           </div>
