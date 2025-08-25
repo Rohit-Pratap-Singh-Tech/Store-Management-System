@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     # Product URLs
     path('product/add', views.product_add, name='product_add'),
@@ -17,9 +18,15 @@ urlpatterns = [
     path('category/search', views.category_search, name='category_search'),
 
     # # Sales URLs
-    # path('sale/add', views.sale_add, name='sale_add'),
-    # path('sale/list', views.sale_list, name='sale_list'),
-    # path('sale/search', views.sale_search, name='sale_search'),
+    path('sale/add', views.sale_add, name='sale_add'),
+    path('sale/list', views.sale_list, name='sale_list'),
+    path('sale/search', views.sale_search, name='sale_search'),
+    path('sale/sell_per_month',views.sell_per_month,name='sale_per_month'),
+    path('sale/sell_per_year', views.sell_per_year, name='sale_per_year'),
+    path('sale/sell_per_week', views.sell_per_week, name='sale_per_week'),
+    path('sale/sell_this_month', views.sell_this_month, name='sale_per_month'),
+    path('sale/sell_this_year', views.sell_this_year, name='sale_per_year'),
+    path('sale/sell_this_week', views.sell_this_week, name='sale_per_week'),
     #
     # # Transaction URLs
     # path('transaction/add', views.transaction_add, name='transaction_add'),

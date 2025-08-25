@@ -1,18 +1,15 @@
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth import get_user_model
+from mongoengine.errors import DoesNotExist
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from .models import Category, Product, Sale
 from .serializers import CategorySerializer, ProductSerializer, SaleSerializer
-from decimal import Decimal
-from mongoengine.errors import DoesNotExist
-
 
 # -------------------- CATEGORY API --------------------
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Category
-from .serializers import CategorySerializer
-
 
 @api_view(['POST'])
 def category_add(request):
@@ -121,8 +118,6 @@ def category_search(request):
 
 
 #
-# # -------------------- PRODUCT API --------------------
-#
 '''{
     "product_name": "Computer1",
     "price": 999.99,
@@ -130,6 +125,9 @@ def category_search(request):
     "quantity_in_stock": 10,
     "location": "Aisle 3"
 }'''
+# -------------------- PRODUCT API --------------------
+
+
 @api_view(['POST'])
 def product_add(request):
     product_name = request.data.get('product_name')
@@ -254,6 +252,7 @@ def product_list(request):
     "product_name": "Laptop2"
 }
 '''
+
 @api_view(['GET'])
 def product_search(request):
     product_name = request.data.get('product_name')
@@ -277,62 +276,257 @@ def product_search(request):
         return Response({"status": "error", "message": "Product not found"}, status=404)
 
 #
-# # -------------------- SALE API --------------------
-#
-# @api_view(['POST'])
-# def sale_add(request):
-#     employee_username = request.data.get('employee_username')
-#     total_amount = request.data.get('total_amount')
-#
-#     if not all([employee_username, total_amount]):
-#         return Response({"status": "error", "message": "Employee username and total amount required"}, status=400)
-#
-#     try:
-#         from django.contrib.auth import get_user_model
-#         User = get_user_model()
-#
-#         employee = User.objects.get(username=employee_username)
-#         sale = Sale(employee=employee, total_amount=Decimal(str(total_amount)))
-#         sale.save()
-#         return Response({"status": "success", "message": "Sale added successfully", "sale_id": str(sale.id)}, status=201)
-#     except User.DoesNotExist:
-#         return Response({"status": "error", "message": "Employee not found"}, status=404)
-#
-#
-# @api_view(['GET'])
-# def sale_list(request):
-#     try:
-#         sales = Sale.objects.all()
-#         sales_data = [
-#             {
-#                 "sale_id": str(s.id),
-#                 "employee_username": s.employee.username if s.employee else None,
-#                 "total_amount": str(s.total_amount),
-#                 "sale_date": s.sale_date.isoformat() if s.sale_date else None
-#             }
-#             for s in sales
-#         ]
-#         return Response({"status": "success", "sales": sales_data}, status=200)
-#     except Exception as e:
-#         return Response({"status": "error", "message": str(e)}, status=500)
-#
-#
-# @api_view(['GET'])
-# def sale_search(request):
-#     sale_id = request.query_params.get('sale_id')
-#     if not sale_id:
-#         return Response({"status": "error", "message": "Sale ID is required"}, status=400)
-#
-#     try:
-#         sale = Sale.objects.get(id=sale_id)
-#         return Response({
-#             "status": "success",
-#             "sale": {
-#                 "sale_id": str(sale.id),
-#                 "employee_username": sale.employee.username if sale.employee else None,
-#                 "total_amount": str(sale.total_amount),
-#                 "sale_date": sale.sale_date.isoformat() if sale.sale_date else None
-#             }
-#         }, status=200)
-#     except DoesNotExist:
-#         return Response({"status": "error", "message": "Sale not found"}, status=404)
+# -------------------- SALE API --------------------
+from decimal import Decimal, InvalidOperation
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import Sale   # Sale model
+# please provide as req as there is no check for is user resent or not make sure user is present  rohit
+@api_view(['POST'])
+def sale_add(request):
+    employee_username = request.data.get('employee_username')
+    total_amount = request.data.get('total_amount')
+
+    if not all([employee_username, total_amount is not None]):
+        return Response(
+            {"status": "error", "message": "Employee username and total amount are required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        total_amount = Decimal(str(total_amount))
+    except (InvalidOperation, ValueError, TypeError):
+        return Response(
+            {"status": "error", "message": "Invalid total amount"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Store only the username string, without checking if the user exists
+    sale = Sale(employee=employee_username, total_amount=total_amount)
+    sale.save()
+    return Response(
+        {
+            "status": "success",
+            "message": "Sale added successfully",
+            "sale_id": str(sale.id),
+        },
+        status=status.HTTP_201_CREATED
+    )
+
+
+@api_view(['GET'])
+def sale_list(request):
+    try:
+        sales = Sale.objects.all()
+        sales_data = [
+            {
+                "sale_id": str(s.id),
+                "employee_username": s.employee,
+                "total_amount": str(s.total_amount),
+                "sale_date": s.sale_date.isoformat() if s.sale_date else None
+            }
+            for s in sales
+        ]
+        return Response({"status": "success", "sales": sales_data}, status=200)
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=500)
+
+@api_view(['GET'])
+def sale_search(request):
+    employee_username = request.data.get('employee_username')
+    if not employee_username:
+        return Response(
+            {"status": "error", "message": "Employee username is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    sales = Sale.objects(employee=employee_username)
+    if not sales:
+        return Response(
+            {"status": "error", "message": "No sales found for this employee"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    return Response(
+        {
+            "status": "success",
+            "sales": [
+                {
+                    "sale_id": str(sale.id),
+                    "employee_username": sale.employee,
+                    "total_amount": str(sale.total_amount),
+                    "sale_date": sale.sale_date.isoformat() if sale.sale_date else None
+                }
+                for sale in sales
+            ]
+        },
+        status=status.HTTP_200_OK
+    )
+
+from datetime import datetime, timedelta
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import Sale
+
+@api_view(['GET'])
+def sell_this_week(request):
+    """Get all sales from the last 7 days"""
+    today = datetime.utcnow()
+    week_ago = today - timedelta(days=7)
+
+    sales = Sale.objects(sale_date__gte=week_ago, sale_date__lte=today)
+
+    return Response({
+        "status": "success",
+        "sales_count": sales.count(),
+        "total_amount": str(sum(sale.total_amount for sale in sales)),
+        "sales": [
+            {
+                "sale_id": str(sale.id),
+                "employee_username": sale.employee,
+                "total_amount": str(sale.total_amount),
+                "sale_date": sale.sale_date.isoformat() if sale.sale_date else None
+            }
+            for sale in sales
+        ]
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def sell_this_month(request):
+    """Get all sales for the current month"""
+    today = datetime.utcnow()
+    start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    sales = Sale.objects(sale_date__gte=start_of_month, sale_date__lte=today)
+
+    return Response({
+        "status": "success",
+        "sales_count": sales.count(),
+        "total_amount": str(sum(sale.total_amount for sale in sales)),
+        "sales": [
+            {
+                "sale_id": str(sale.id),
+                "employee_username": sale.employee,
+                "total_amount": str(sale.total_amount),
+                "sale_date": sale.sale_date.isoformat() if sale.sale_date else None
+            }
+            for sale in sales
+        ]
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def sell_this_year(request):
+    """Get all sales for the current year"""
+    today = datetime.utcnow()
+    start_of_year = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    sales = Sale.objects(sale_date__gte=start_of_year, sale_date__lte=today)
+
+    return Response({
+        "status": "success",
+        "sales_count": sales.count(),
+        "total_amount": str(sum(sale.total_amount for sale in sales)),
+        "sales": [
+            {
+                "sale_id": str(sale.id),
+                "employee_username": sale.employee,
+                "total_amount": str(sale.total_amount),
+                "sale_date": sale.sale_date.isoformat() if sale.sale_date else None
+            }
+            for sale in sales
+        ]
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def sell_per_week(request):
+    """Get sales grouped by ISO week for all time"""
+    pipeline = [
+        {
+            "$group": {
+                "_id": {
+                    "year": {"$year": "$sale_date"},
+                    "week": {"$isoWeek": "$sale_date"}
+                },
+                "total_amount": {"$sum": "$total_amount"},
+                "sales_count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"_id.year": 1, "_id.week": 1}}
+    ]
+
+    sales = Sale.objects.aggregate(*pipeline)
+
+    result = [
+        {
+            "year": s["_id"]["year"],
+            "week": s["_id"]["week"],
+            "sales_count": s["sales_count"],
+            "total_amount": str(s["total_amount"])
+        }
+        for s in sales
+    ]
+
+    return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def sell_per_month(request):
+    """Get sales grouped by month for all time"""
+    pipeline = [
+        {
+            "$group": {
+                "_id": {
+                    "year": {"$year": "$sale_date"},
+                    "month": {"$month": "$sale_date"}
+                },
+                "total_amount": {"$sum": "$total_amount"},
+                "sales_count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"_id.year": 1, "_id.month": 1}}
+    ]
+
+    sales = Sale.objects.aggregate(*pipeline)
+
+    result = [
+        {
+            "year": s["_id"]["year"],
+            "month": s["_id"]["month"],
+            "sales_count": s["sales_count"],
+            "total_amount": str(s["total_amount"])
+        }
+        for s in sales
+    ]
+
+    return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def sell_per_year(request):
+    """Get sales grouped by year for all time"""
+    pipeline = [
+        {
+            "$group": {
+                "_id": {"year": {"$year": "$sale_date"}},
+                "total_amount": {"$sum": "$total_amount"},
+                "sales_count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"_id.year": 1}}
+    ]
+
+    sales = Sale.objects.aggregate(*pipeline)
+
+    result = [
+        {
+            "year": s["_id"]["year"],
+            "sales_count": s["sales_count"],
+            "total_amount": str(s["total_amount"])
+        }
+        for s in sales
+    ]
+
+    return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
