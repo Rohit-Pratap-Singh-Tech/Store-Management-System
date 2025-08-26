@@ -8,6 +8,10 @@ from rest_framework.response import Response
 
 from .models import Category, Product, Sale
 from .serializers import CategorySerializer, ProductSerializer, SaleSerializer
+from rest_framework.decorators import api_view
+from .models import Transaction, Sale, Product
+
+
 
 # -------------------- CATEGORY API --------------------
 
@@ -315,7 +319,6 @@ def sale_add(request):
         status=status.HTTP_201_CREATED
     )
 
-
 @api_view(['GET'])
 def sale_list(request):
     try:
@@ -530,3 +533,157 @@ def sell_per_year(request):
     ]
 
     return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
+
+#  ---------------------Transaction Api---------------------------
+from decimal import Decimal
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Sale, Product, Transaction
+
+@api_view(['POST'])
+def transaction_add(request):
+    items = request.data.get("items")  # list of { product_name, quantity_sold }
+    employee = request.data.get("employee")
+
+    if not all([items, employee]):
+        return Response(
+            {"status": "error", "message": "Employee and items are required"},
+            status=400
+        )
+
+    if not isinstance(items, list) or len(items) == 0:
+        return Response({"status": "error", "message": "Items must be a non-empty list"}, status=400)
+
+    transactions_data = []
+    total_amount = Decimal("0.00")
+
+    # Validate products & stock first
+    for item in items:
+        product_name = item.get("product_name")
+        quantity_sold = item.get("quantity_sold")
+
+        if not all([product_name, quantity_sold]):
+            return Response({"status": "error", "message": "Each item must have product_name and quantity_sold"}, status=400)
+
+        try:
+            product = Product.objects(product_name=product_name).first()
+            if not product:
+                return Response({"status": "error", "message": f"Product '{product_name}' not found"}, status=404)
+
+            quantity_sold = int(quantity_sold)
+
+            if product.quantity_in_stock < quantity_sold:
+                return Response({
+                    "status": "error",
+                    "message": f"Not enough stock for {product_name}. Available: {product.quantity_in_stock}, Requested: {quantity_sold}"
+                }, status=400)
+
+            price_at_sale = Decimal(str(product.price))
+            item_total = quantity_sold * price_at_sale
+            total_amount += item_total
+
+            transactions_data.append({
+                "product": product,
+                "quantity_sold": quantity_sold,
+                "price_at_sale": price_at_sale,
+                "item_total": item_total
+            })
+
+        except ValueError:
+            return Response({"status": "error", "message": "Invalid quantity"}, status=400)
+
+    # 1. Create Sale with total_amount
+    sale = Sale(
+        employee=employee,
+        total_amount=total_amount
+    ).save()
+
+    # 2. Create Transactions and update stock
+    transaction_ids = []
+    for t in transactions_data:
+        transaction = Transaction(
+            sale=sale,
+            product=t["product"],
+            quantity_sold=t["quantity_sold"],
+            price_at_sale=t["price_at_sale"]
+        ).save()
+
+        # Decrease stock
+        t["product"].quantity_in_stock -= t["quantity_sold"]
+        t["product"].save()
+        transaction_ids.append(str(transaction.id))
+
+    return Response({
+        "status": "success",
+        "message": "Sale with multiple transactions added successfully, stock updated",
+        "sale_id": str(sale.id),
+        "transaction_ids": transaction_ids,
+        "total_amount": str(total_amount),
+        "items": [
+            {
+                "product": t["product"].product_name,
+                "sold_quantity": t["quantity_sold"],
+                "price_per_unit": str(t["price_at_sale"]),
+                "item_total": str(t["item_total"]),
+                "remaining_stock": t["product"].quantity_in_stock
+            }
+            for t in transactions_data
+        ]
+    }, status=201)
+
+@api_view(['GET'])
+def transaction_list(request):
+    transactions = Transaction.objects.all()
+    if not transactions:
+        return Response({"status": "error", "message": "No transactions found"}, status=404)
+
+    return Response({
+        "status": "success",
+        "transactions": [
+            {
+                "transaction_id": str(tx.id),
+                "sale_id": str(tx.sale.id) if tx.sale else None,
+                "employee": tx.sale.employee if tx.sale and tx.sale.employee else None,
+                "product_id": str(tx.product.id) if tx.product else None,
+                "product_name": tx.product.product_name if tx.product else None,
+                "quantity_sold": tx.quantity_sold,
+                "price_at_sale": str(tx.price_at_sale),
+            }
+            for tx in transactions
+        ]
+    })
+
+@api_view(['GET'])
+def transaction_search_with_employee(request):
+    employee_username = request.data.get('employee_username')
+    if not employee_username:
+        return Response({"status": "error", "message": "employee_username is required"}, status=400)
+
+    sales = Sale.objects(employee=employee_username)
+    if not sales:
+        return Response({"status": "error", "message": f"No sales found for employee '{employee_username}'"}, status=404)
+
+    return Response({
+        "status": "success",
+        "employee_username": employee_username,
+        "sales": [
+            {
+                "sale_id": str(sale.id),
+                "total_amount": str(sale.total_amount),
+                "sale_date": sale.sale_date.isoformat() if sale.sale_date else None,
+                "transactions": [
+                    {
+                        "transaction_id": str(tx.id),
+                        "product_id": str(tx.product.id) if tx.product else None,
+                        "product_name": tx.product.product_name if tx.product else None,
+                        "quantity_sold": tx.quantity_sold,
+                        "price_at_sale": str(tx.price_at_sale),
+                    }
+                    for tx in Transaction.objects(sale=sale)
+                ]
+            }
+            for sale in sales
+        ]
+    })
+
+

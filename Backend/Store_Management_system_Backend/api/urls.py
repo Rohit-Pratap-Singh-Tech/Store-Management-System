@@ -25,17 +25,14 @@ urlpatterns = [
     path('sale/sell_per_month',views.sell_per_month,name='sale_per_month'),
     path('sale/sell_per_year', views.sell_per_year, name='sale_per_year'),
     path('sale/sell_per_week', views.sell_per_week, name='sale_per_week'),
-    path('sale/sell_this_month', views.sell_this_month, name='sale_per_month'),
-    path('sale/sell_this_year', views.sell_this_year, name='sale_per_year'),
-    path('sale/sell_this_week', views.sell_this_week, name='sale_per_week'),
+    path('sale/sell_this_month', views.sell_this_month, name='sale_this_month'),
+    path('sale/sell_this_year', views.sell_this_year, name='sale_this_year'),
+    path('sale/sell_this_week', views.sell_this_week, name='sale_this_week'),
     #
     # # Transaction URLs
-    # path('transaction/add', views.transaction_add, name='transaction_add'),
-    # path('transaction/list', views.transaction_list, name='transaction_list'),
+    path('transaction/add', views.transaction_add, name='transaction_add'),
+    path('transaction/list', views.transaction_list, name='transaction_list'),
     # path('transaction/search', views.transaction_search, name='transaction_search'),
-    # path('transaction/employee_sales', views.employee_sales, name='employee_sales'),
-    # path('transaction/employee_sales/username/<str:employee_username>', views.employee_sales_by_username, name='employee_sales_by_username'),
+    path('transaction/employee_transaction', views.transaction_search_with_employee, name='employee_sales'),
     # path('transaction/employee_sales/date/<str:date>', views.employee_sales_by_date, name='employee_sales_by_date'),
-    #
-
 ]

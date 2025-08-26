@@ -1,5 +1,4 @@
 from mongoengine import Document, StringField, DecimalField, IntField, ReferenceField, DateTimeField
-from django.conf import settings
 import datetime
 
 
@@ -25,10 +24,9 @@ class Product(Document):
 
 
 class Sale(Document):
-    employee = StringField(required=True)  # use user_id / username since AUTH_USER_MODEL is Django ORM
+    employee = StringField(required=True)
     total_amount = DecimalField(precision=2, required=True)
     sale_date = DateTimeField(default=datetime.datetime.utcnow)
-
 
 class Transaction(Document):
     sale = ReferenceField(Sale, reverse_delete_rule=2)  # CASCADE
