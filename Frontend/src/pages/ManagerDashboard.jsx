@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { logout } from "../auth";
 import { dashboardAPI, salesAPI } from '../services/api';
+import TransactionHistory from '../components/TransactionHistory';
 
 const ManagerDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview')
@@ -98,6 +99,7 @@ const ManagerDashboard = () => {
   const sidebarItems = [
     { id: 'overview', name: 'Overview', icon: '📊' },
     { id: 'sales', name: 'Sales', icon: '💰' },
+    { id: 'transactions', name: 'Transactions', icon: '🧾' },
     { id: 'inventory', name: 'Inventory', icon: '📦' },
     { id: 'reports', name: 'Reports', icon: '📈' }
   ]
@@ -175,12 +177,14 @@ const ManagerDashboard = () => {
               <h1 className="text-3xl font-bold text-slate-800">
                 {activeTab === 'overview' && 'Manager Overview'}
                 {activeTab === 'sales' && 'Sales Management'}
+                {activeTab === 'transactions' && 'Transaction History'}
                 {activeTab === 'inventory' && 'Inventory Overview'}
                 {activeTab === 'reports' && 'Reports & Analytics'}
               </h1>
               <p className="text-slate-600 mt-1">
                 {activeTab === 'overview' && 'Monitor store operations and key performance metrics'}
                 {activeTab === 'sales' && 'Track sales performance and manage transactions'}
+                {activeTab === 'transactions' && 'View detailed transaction history and sales records'}
                 {activeTab === 'inventory' && 'Monitor inventory levels and stock management'}
                 {activeTab === 'reports' && 'Generate and view detailed reports'}
               </p>
@@ -391,6 +395,10 @@ const ManagerDashboard = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'transactions' && (
+                <TransactionHistory />
               )}
 
               {activeTab === 'inventory' && (

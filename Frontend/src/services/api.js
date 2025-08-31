@@ -246,6 +246,144 @@ export const salesAPI = {
       throw error;
     }
   },
+
+  // Transaction API functions
+  // Add new transaction with multiple items
+  addTransaction: async (transactionData) => {
+    try {
+      const response = await api.post('/api/transaction/add', transactionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      throw error;
+    }
+  },
+
+  // Get all transactions
+  getAllTransactions: async () => {
+    try {
+      const response = await api.get('/api/transaction/list');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      throw error;
+    }
+  },
+
+  // Search transactions by employee
+  getEmployeeTransactions: async (employeeUsername) => {
+    try {
+      const response = await api.get('/api/transaction/employee_transaction', {
+        data: { employee_username: employeeUsername }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching employee transactions:', error);
+      throw error;
+    }
+  },
+
+  // Get sales statistics with real data
+  getSalesStats: async () => {
+    try {
+      const [salesResponse, transactionsResponse] = await Promise.all([
+        this.getAllSales(),
+        this.getAllTransactions()
+      ]);
+
+      const sales = salesResponse.status === 'success' ? salesResponse.sales : [];
+      const transactions = transactionsResponse.status === 'success' ? transactionsResponse.transactions : [];
+
+      const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.total_amount), 0);
+      const totalTransactions = sales.length;
+      const averageTicket = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+      const itemsSold = transactions.reduce((sum, tx) => sum + tx.quantity_sold, 0);
+
+      return {
+        totalSales,
+        totalTransactions,
+        averageTicket,
+        itemsSold,
+        recentTransactions: sales.slice(0, 10).map(sale => ({
+          id: sale.sale_id,
+          customer: sale.employee_username,
+          amount: parseFloat(sale.total_amount),
+          time: new Date(sale.sale_date).toLocaleString(),
+          items: transactions.filter(tx => tx.sale_id === sale.sale_id).reduce((sum, tx) => sum + tx.quantity_sold, 0),
+          status: 'Completed'
+        }))
+      };
+    } catch (error) {
+      console.error('Error fetching sales stats:', error);
+      throw error;
+    }
+  },
+
+  // Get sales for this week
+  getSalesThisWeek: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_this_week');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching this week sales:', error);
+      throw error;
+    }
+  },
+
+  // Get sales for this month
+  getSalesThisMonth: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_this_month');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching this month sales:', error);
+      throw error;
+    }
+  },
+
+  // Get sales for this year
+  getSalesThisYear: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_this_year');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching this year sales:', error);
+      throw error;
+    }
+  },
+
+  // Get sales grouped by week (all time)
+  getSalesPerWeek: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_per_week');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sales per week:', error);
+      throw error;
+    }
+  },
+
+  // Get sales grouped by month (all time)
+  getSalesPerMonth: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_per_month');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sales per month:', error);
+      throw error;
+    }
+  },
+
+  // Get sales grouped by year (all time)
+  getSalesPerYear: async () => {
+    try {
+      const response = await api.get('/api/sale/sell_per_year');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sales per year:', error);
+      throw error;
+    }
+  },
 };
 
 // Dashboard Stats API functions

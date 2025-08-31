@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
-import { productAPI } from '../services/api';
+import { productAPI, salesAPI } from '../services/api';
+import TransactionHistory from '../components/TransactionHistory';
 
 const CashierDashboard = () => {
   const [activeTab, setActiveTab] = useState('pos');
@@ -53,6 +54,8 @@ const CashierDashboard = () => {
   // Fetch real data from API
   useEffect(() => {
     fetchProducts();
+    fetchTransactions();
+    fetchSalesStats();
   }, []);
 
   // Filter products based on search query
@@ -81,6 +84,42 @@ const CashierDashboard = () => {
       showMessage('error', 'Failed to fetch products');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await salesAPI.getAllTransactions();
+      if (response.status === 'success') {
+        // Transform transactions to match the expected format
+        const transformedTransactions = response.transactions.slice(0, 10).map(tx => ({
+          id: tx.transaction_id,
+          customer: tx.employee || 'Unknown',
+          amount: parseFloat(tx.price_at_sale) * tx.quantity_sold,
+          time: new Date().toLocaleString(), // Backend doesn't provide transaction time
+          items: tx.quantity_sold,
+          status: 'Completed'
+        }));
+        setRecentTransactions(transformedTransactions);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      // Don't show error message for transactions as it's not critical
+    }
+  };
+
+  const fetchSalesStats = async () => {
+    try {
+      const stats = await salesAPI.getSalesStats();
+      setDailyStats({
+        totalSales: stats.totalSales,
+        totalTransactions: stats.totalTransactions,
+        averageTicket: stats.averageTicket,
+        itemsSold: stats.itemsSold
+      });
+    } catch (error) {
+      console.error('Error fetching sales stats:', error);
+      // Don't show error message for stats as it's not critical
     }
   };
 
@@ -171,47 +210,52 @@ const CashierDashboard = () => {
     try {
       setLoading(true);
       
-      // Update stock for each item in cart
-      const stockUpdatePromises = cart.map(async (item) => {
-        const newQuantity = item.quantity_in_stock - item.quantity;
-        if (newQuantity < 0) {
-          throw new Error(`Insufficient stock for ${item.product_name}`);
-        }
-        
-        // Update stock in backend
-        await productAPI.updateProductStock(item.product_name, newQuantity);
-        
-        // Return updated product data
-        return {
-          ...item,
-          quantity_in_stock: newQuantity
-        };
-      });
+      // Prepare transaction data for backend
+      const transactionData = {
+        employee: customerInfo.name || 'Cashier', // Use customer name or default to 'Cashier'
+        items: cart.map(item => ({
+          product_name: item.product_name,
+          quantity_sold: item.quantity
+        }))
+      };
 
-      // Wait for all stock updates to complete
-      const updatedProducts = await Promise.all(stockUpdatePromises);
+      // Send transaction to backend (this will handle stock updates automatically)
+      const response = await salesAPI.addTransaction(transactionData);
       
-      // Update local products state with new stock levels
-      setProducts(prevProducts => 
-        prevProducts.map(product => {
-          const updatedProduct = updatedProducts.find(up => up.product_name === product.product_name);
-          return updatedProduct ? { ...product, quantity_in_stock: updatedProduct.quantity_in_stock } : product;
-        })
-      );
+      if (response.status === 'success') {
+        // Update local products state with new stock levels from response
+        const updatedProducts = response.items.map(item => ({
+          product_name: item.product,
+          quantity_in_stock: item.remaining_stock
+        }));
 
-      // Note: Transaction records would be saved to backend here
-      // For now, we only update stock levels
-      console.log('Transaction completed:', {
-        customer: customerInfo.name || 'Walk-in Customer',
-        amount: getCartTotal(),
-        items: getCartItemCount(),
-        cart: cart
-      });
+        setProducts(prevProducts => 
+          prevProducts.map(product => {
+            const updatedProduct = updatedProducts.find(up => up.product_name === product.product_name);
+            return updatedProduct ? { ...product, quantity_in_stock: updatedProduct.quantity_in_stock } : product;
+          })
+        );
 
-      // Clear cart and customer info
-      setCart([]);
-      setCustomerInfo({ name: '', phone: '', email: '' });
-      showMessage('success', 'Transaction completed successfully! Stock updated.');
+        // Refresh transactions and stats
+        await Promise.all([
+          fetchTransactions(),
+          fetchSalesStats()
+        ]);
+
+        // Clear cart and customer info
+        setCart([]);
+        setCustomerInfo({ name: '', phone: '', email: '' });
+        
+        showMessage('success', `Transaction completed successfully! Total: $${response.total_amount}`);
+        
+        console.log('Transaction completed:', {
+          sale_id: response.sale_id,
+          total_amount: response.total_amount,
+          items: response.items
+        });
+      } else {
+        throw new Error(response.message || 'Transaction failed');
+      }
       
     } catch (error) {
       console.error('Transaction error:', error);
@@ -524,34 +568,7 @@ const CashierDashboard = () => {
               )}
 
                              {activeTab === 'transactions' && (
-                 <div className="space-y-6">
-                   <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
-                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Transactions</h3>
-                     <div className="space-y-3">
-                       {recentTransactions.length > 0 ? (
-                         recentTransactions.map((transaction) => (
-                           <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                             <div>
-                               <p className="font-medium text-slate-800">{transaction.customer}</p>
-                               <p className="text-sm text-slate-600">{transaction.time} • {transaction.items} items</p>
-                             </div>
-                             <div className="text-right">
-                               <p className="font-semibold text-slate-800">${transaction.amount.toFixed(2)}</p>
-                               <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
-                                 {transaction.status}
-                               </span>
-                             </div>
-                           </div>
-                         ))
-                       ) : (
-                         <div className="text-center py-8">
-                           <p className="text-slate-600">No transactions yet</p>
-                           <p className="text-sm text-slate-500 mt-2">Transactions will appear here once sales are processed</p>
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 </div>
+                 <TransactionHistory />
                )}
 
               {activeTab === 'analytics' && (
