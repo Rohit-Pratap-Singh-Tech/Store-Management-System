@@ -92,14 +92,16 @@ const CashierDashboard = () => {
       const response = await salesAPI.getAllTransactions();
       if (response.status === 'success') {
         // Transform transactions to match the expected format
-        const transformedTransactions = response.transactions.slice(0, 10).map(tx => ({
-          id: tx.transaction_id,
-          customer: tx.employee || 'Unknown',
-          amount: parseFloat(tx.price_at_sale) * tx.quantity_sold,
-          time: new Date().toLocaleString(), // Backend doesn't provide transaction time
-          items: tx.quantity_sold,
-          status: 'Completed'
-        }));
+        const transformedTransactions = response.transactions
+          .slice(0, 10) // Get latest 10 transactions
+          .map(tx => ({
+            id: tx.transaction_id,
+            customer: tx.employee || 'Unknown',
+            amount: parseFloat(tx.price_at_sale) * tx.quantity_sold,
+            time: new Date().toLocaleString(), // Backend doesn't provide transaction time
+            items: tx.quantity_sold,
+            status: 'Completed'
+          }));
         setRecentTransactions(transformedTransactions);
       }
     } catch (error) {
@@ -110,12 +112,33 @@ const CashierDashboard = () => {
 
   const fetchSalesStats = async () => {
     try {
-      const stats = await salesAPI.getSalesStats();
+      // Fetch real sales and transaction data from backend
+      const [salesData, transactionsData] = await Promise.all([
+        salesAPI.getAllSales(),
+        salesAPI.getAllTransactions()
+      ]);
+
+      // Calculate real stats from actual data
+      let totalSales = 0;
+      let totalTransactions = 0;
+      let itemsSold = 0;
+
+      if (salesData.status === 'success' && Array.isArray(salesData.sales)) {
+        totalSales = salesData.sales.reduce((sum, sale) => sum + parseFloat(sale.total_amount || 0), 0);
+        totalTransactions = salesData.sales.length;
+      }
+
+      if (transactionsData.status === 'success' && Array.isArray(transactionsData.transactions)) {
+        itemsSold = transactionsData.transactions.reduce((sum, tx) => sum + (tx.quantity_sold || 0), 0);
+      }
+
+      const averageTicket = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+
       setDailyStats({
-        totalSales: stats.totalSales,
-        totalTransactions: stats.totalTransactions,
-        averageTicket: stats.averageTicket,
-        itemsSold: stats.itemsSold
+        totalSales: totalSales,
+        totalTransactions: totalTransactions,
+        averageTicket: averageTicket,
+        itemsSold: itemsSold
       });
     } catch (error) {
       console.error('Error fetching sales stats:', error);
@@ -624,13 +647,33 @@ const CashierDashboard = () => {
                     </div>
                   </div>
 
-                                     <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
-                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Sales Analytics</h3>
-                     <div className="text-center py-8">
-                       <p className="text-slate-600">No sales data available yet</p>
-                       <p className="text-sm text-slate-500 mt-2">Sales analytics will appear here once transactions are processed</p>
-                     </div>
-                   </div>
+                  {/* Recent Transactions */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Transactions</h3>
+                    <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
+                      {recentTransactions.length > 0 ? (
+                        recentTransactions.map((transaction) => (
+                          <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">{transaction.customer}</p>
+                              <p className="text-sm text-slate-600">{transaction.time} • {transaction.items} items</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-slate-800">${transaction.amount.toFixed(2)}</p>
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
+                                {transaction.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-slate-600">No recent transactions</p>
+                          <p className="text-sm text-slate-500 mt-2">Transactions will appear here as sales are processed</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </>

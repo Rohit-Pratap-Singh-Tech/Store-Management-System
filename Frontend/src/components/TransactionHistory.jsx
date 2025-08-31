@@ -91,7 +91,7 @@ const TransactionHistory = () => {
       </div>
 
       {/* Sales List */}
-      <div className="space-y-4">
+      <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
         {filteredSales.length > 0 ? (
           filteredSales.map((sale) => {
             const saleTransactions = getTransactionsForSale(sale.sale_id);

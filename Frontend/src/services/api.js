@@ -287,8 +287,8 @@ export const salesAPI = {
   getSalesStats: async () => {
     try {
       const [salesResponse, transactionsResponse] = await Promise.all([
-        this.getAllSales(),
-        this.getAllTransactions()
+        salesAPI.getAllSales(),
+        salesAPI.getAllTransactions()
       ]);
 
       const sales = salesResponse.status === 'success' ? salesResponse.sales : [];

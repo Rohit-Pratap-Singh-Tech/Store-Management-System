@@ -140,11 +140,11 @@ const AdminDashboard = () => {
       }
 
       // Set recent activities to empty array (removed as requested)
-      setRecentActivities([]);
+        setRecentActivities([]);
 
       // Set staff members (set to empty for now since user list endpoint doesn't exist)
-      setStaffMembers([]);
-      setNotifications(0);
+        setStaffMembers([]);
+        setNotifications(0);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -167,7 +167,7 @@ const AdminDashboard = () => {
       } else if (error.code === 'ECONNREFUSED') {
         showMessage('Cannot connect to backend server. Please ensure the backend is running on port 8000.', 'error');
       } else {
-        showMessage('Failed to fetch dashboard data. Please check your backend connection.', 'error');
+      showMessage('Failed to fetch dashboard data. Please check your backend connection.', 'error');
       }
     } finally {
       setLoading(false);
@@ -437,7 +437,7 @@ const AdminDashboard = () => {
 
                   {/* Sales Summary and Top Products */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                         <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Sales Summary</h3>
                        <div className="space-y-4">
                          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -455,7 +455,7 @@ const AdminDashboard = () => {
                          
                          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                            <div className="flex items-center space-x-3">
-                             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                <span className="text-sm">📊</span>
                              </div>
                              <div>
@@ -483,16 +483,16 @@ const AdminDashboard = () => {
                            <div className="flex items-center space-x-3">
                              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                                <span className="text-sm">⚠️</span>
-                             </div>
+                              </div>
                              <div>
                                <p className="font-medium text-slate-800">Low Stock Alert</p>
                                <p className="text-sm text-slate-600">Items need attention</p>
-                             </div>
-                           </div>
+                              </div>
+                            </div>
                            <p className="font-semibold text-orange-600">{stats.lowStockItems}</p>
-                         </div>
-                       </div>
-                     </div>
+                          </div>
+                      </div>
+                    </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                       <h3 className="text-lg font-semibold text-slate-800 mb-4">Top Products by Stock</h3>
@@ -547,46 +547,46 @@ const AdminDashboard = () => {
                            <p className="text-sm text-slate-500 mt-2">Transactions will appear here as sales are made</p>
                          </div>
                        )}
-                     </div>
-                   </div>
+                    </div>
+                  </div>
 
-                   {/* Quick Actions */}
-                   <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
-                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
-                     {/* Access Control and Set Admin Role removed */}
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <button
-                         onClick={handleInventoryAccess}
-                         className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                       >
-                         <span className="text-2xl">📦</span>
-                         <div>
-                           <p className="font-medium text-slate-800">Manage Inventory</p>
-                           <p className="text-sm text-slate-600">Add or update products</p>
-                         </div>
-                       </button>
-                       <button
-                         onClick={handlePOSAccess}
-                         className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
-                       >
-                         <span className="text-2xl">💳</span>
-                         <div>
-                           <p className="font-medium text-slate-800">POS System</p>
-                           <p className="text-sm text-slate-600">Process transactions</p>
-                         </div>
-                       </button>
-                       <Link
-                         to="/signup"
-                         className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                       >
-                         <span className="text-2xl">👨‍💼</span>
-                         <div>
-                           <p className="font-medium text-slate-800">Add Staff Member</p>
-                           <p className="text-sm text-slate-600">Create new staff accounts</p>
-                         </div>
-                       </Link>
-                     </div>
-                   </div>
+                  {/* Quick Actions */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
+                    {/* Access Control and Set Admin Role removed */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <button
+                        onClick={handleInventoryAccess}
+                        className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                      >
+                        <span className="text-2xl">📦</span>
+                        <div>
+                          <p className="font-medium text-slate-800">Manage Inventory</p>
+                          <p className="text-sm text-slate-600">Add or update products</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={handlePOSAccess}
+                        className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
+                      >
+                        <span className="text-2xl">💳</span>
+                        <div>
+                          <p className="font-medium text-slate-800">POS System</p>
+                          <p className="text-sm text-slate-600">Process transactions</p>
+                        </div>
+                      </button>
+                      <Link
+                        to="/signup"
+                        className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                      >
+                        <span className="text-2xl">👨‍💼</span>
+                        <div>
+                          <p className="font-medium text-slate-800">Add Staff Member</p>
+                          <p className="text-sm text-slate-600">Create new staff accounts</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -892,7 +892,7 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Recent Sales Details */}
-                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                     <h4 className="text-lg font-semibold text-slate-800 mb-4">Recent Sales Details</h4>
                     <div className="space-y-3 max-h-64 overflow-y-auto">
                       {reportsData.thisWeek.sales && reportsData.thisWeek.sales.length > 0 ? (

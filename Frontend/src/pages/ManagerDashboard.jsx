@@ -35,7 +35,7 @@ const ManagerDashboard = () => {
       setLoading(true);
       const [inventoryStats, salesData] = await Promise.all([
         dashboardAPI.getInventoryStats(),
-        dashboardAPI.getSalesStats()
+        salesAPI.getSalesStats()
       ]);
       
       setStats(prev => ({
@@ -78,8 +78,8 @@ const ManagerDashboard = () => {
       }
       setPendingTasks(tasks);
 
-      // Set recent orders from sales data (empty for now since no sales backend)
-      setRecentOrders([]);
+      // Set recent orders from sales data
+      setRecentOrders(salesData.recentTransactions || []);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -94,6 +94,96 @@ const ManagerDashboard = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('selectedRole');
     window.location.href = '/login';
+  };
+
+  const handleExportReport = () => {
+    try {
+      // Create report data
+      const reportData = {
+        title: 'Store Management System - Manager Report',
+        generatedAt: new Date().toLocaleString(),
+        overview: {
+          totalSales: salesStats.totalSales,
+          totalProducts: stats.totalProducts,
+          lowStockItems: stats.lowStockItems,
+          outOfStockItems: stats.outOfStockItems
+        },
+        salesMetrics: {
+          totalRevenue: salesStats.totalSales,
+          totalTransactions: salesStats.totalTransactions,
+          averageTicket: salesStats.averageTicket,
+          itemsSold: salesStats.itemsSold
+        },
+        salesTrends: {
+          weeklyAverage: salesStats.totalSales > 0 ? (salesStats.totalSales / 4).toFixed(2) : '0.00',
+          monthlyAverage: salesStats.totalSales > 0 ? (salesStats.totalSales / 12).toFixed(2) : '0.00',
+          dailyAverage: salesStats.totalSales > 0 ? (salesStats.totalSales / 30).toFixed(2) : '0.00'
+        },
+        recentTransactions: salesStats.recentTransactions || []
+      };
+
+      // Convert to CSV format
+      const csvContent = generateCSV(reportData);
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `manager_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Show success message
+      alert('Report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Error exporting report. Please try again.');
+    }
+  };
+
+  const generateCSV = (data) => {
+    let csv = 'Manager Dashboard Report\n\n';
+    
+    // Header
+    csv += `Title,${data.title}\n`;
+    csv += `Generated At,${data.generatedAt}\n\n`;
+    
+    // Overview Section
+    csv += 'OVERVIEW\n';
+    csv += 'Metric,Value\n';
+    csv += `Total Sales,$${data.overview.totalSales.toFixed(2)}\n`;
+    csv += `Total Products,${data.overview.totalProducts}\n`;
+    csv += `Low Stock Items,${data.overview.lowStockItems}\n`;
+    csv += `Out of Stock Items,${data.overview.outOfStockItems}\n\n`;
+    
+    // Sales Metrics Section
+    csv += 'SALES METRICS\n';
+    csv += 'Metric,Value\n';
+    csv += `Total Revenue,$${data.salesMetrics.totalRevenue.toFixed(2)}\n`;
+    csv += `Total Transactions,${data.salesMetrics.totalTransactions}\n`;
+    csv += `Average Ticket,$${data.salesMetrics.averageTicket.toFixed(2)}\n`;
+    csv += `Items Sold,${data.salesMetrics.itemsSold}\n\n`;
+    
+    // Sales Trends Section
+    csv += 'SALES TRENDS\n';
+    csv += 'Period,Average\n';
+    csv += `Weekly (4 weeks),$${data.salesTrends.weeklyAverage}\n`;
+    csv += `Monthly (12 months),$${data.salesTrends.monthlyAverage}\n`;
+    csv += `Daily (30 days),$${data.salesTrends.dailyAverage}\n\n`;
+    
+    // Recent Transactions Section
+    if (data.recentTransactions.length > 0) {
+      csv += 'RECENT TRANSACTIONS\n';
+      csv += 'Customer,Time,Items,Amount,Status\n';
+      data.recentTransactions.forEach(transaction => {
+        csv += `${transaction.customer || 'N/A'},${transaction.time || 'N/A'},${transaction.items || 'N/A'},$${transaction.amount?.toFixed(2) || '0.00'},${transaction.status || 'N/A'}\n`;
+      });
+    }
+    
+    return csv;
   };
 
   const sidebarItems = [
@@ -262,59 +352,31 @@ const ManagerDashboard = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                       <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Orders</h3>
-                                           <div className="space-y-3">
-                       {recentOrders.length > 0 ? (
-                         recentOrders.slice(0, 5).map((order) => (
-                           <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                             <div>
-                               <p className="font-medium text-slate-800">{order.customer}</p>
-                               <p className="text-sm text-slate-600">{order.time} • {order.items} items</p>
-                             </div>
-                             <div className="text-right">
-                               <p className="font-semibold text-slate-800">${order.amount.toFixed(2)}</p>
-                               <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
-                                 {order.status}
-                               </span>
-                             </div>
-                           </div>
-                         ))
-                       ) : (
-                         <div className="text-center py-8">
-                           <p className="text-slate-600">No recent orders</p>
-                           <p className="text-sm text-slate-500 mt-2">Orders will appear here once sales are processed</p>
-                         </div>
-                       )}
-                     </div>
+                      <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
+                        {recentOrders.length > 0 ? (
+                          recentOrders.slice(0, 5).map((order) => (
+                            <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-slate-800">{order.customer}</p>
+                                <p className="text-sm text-slate-600">{order.time} • {order.items} items</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-slate-800">${order.amount.toFixed(2)}</p>
+                                <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
+                                  {order.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-slate-600">No recent orders</p>
+                            <p className="text-sm text-slate-500 mt-2">Orders will appear here once sales are processed</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
-                      <h3 className="text-lg font-semibold text-slate-800 mb-4">Pending Tasks</h3>
-                                           <div className="space-y-3">
-                       {pendingTasks.length > 0 ? (
-                         pendingTasks.map((task) => (
-                           <div key={task.id} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg border-l-4 border-orange-500">
-                             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                               <span className="text-sm">📋</span>
-                             </div>
-                             <div className="flex-1">
-                               <p className="font-medium text-slate-800">{task.title}</p>
-                               <p className="text-sm text-slate-600">{task.description}</p>
-                             </div>
-                             <span className={`text-xs px-2 py-1 rounded-full ${
-                               task.priority === 'urgent' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
-                             }`}>
-                               {task.priority}
-                             </span>
-                           </div>
-                         ))
-                       ) : (
-                         <div className="text-center py-8">
-                           <p className="text-slate-600">No pending tasks</p>
-                           <p className="text-sm text-slate-500 mt-2">All inventory levels are healthy</p>
-                         </div>
-                       )}
-                     </div>
-                    </div>
                   </div>
 
 
@@ -377,21 +439,28 @@ const ManagerDashboard = () => {
                   {/* Recent Transactions */}
                   <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Recent Transactions</h3>
-                    <div className="space-y-3">
-                      {salesStats.recentTransactions.map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-slate-800">{transaction.customer}</p>
-                            <p className="text-sm text-slate-600">{transaction.time} • {transaction.items} items</p>
+                    <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
+                      {salesStats.recentTransactions && salesStats.recentTransactions.length > 0 ? (
+                        salesStats.recentTransactions.map((transaction) => (
+                          <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">{transaction.customer}</p>
+                              <p className="text-sm text-slate-600">{transaction.time} • {transaction.items} items</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-slate-800">${transaction.amount.toFixed(2)}</p>
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
+                                {transaction.status}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-slate-800">${transaction.amount.toFixed(2)}</p>
-                            <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">
-                              {transaction.status}
-                            </span>
-                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-slate-600">No recent transactions</p>
+                          <p className="text-sm text-slate-500 mt-2">Transactions will appear here once sales are processed</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 </div>
@@ -433,9 +502,131 @@ const ManagerDashboard = () => {
               )}
 
               {activeTab === 'reports' && (
-                <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Reports & Analytics</h3>
-                  <p className="text-slate-600">Detailed reports and analytics features are coming soon. For now, you can view basic statistics in the Overview and Sales tabs.</p>
+                <div className="space-y-6">
+                  {/* Report Header */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-slate-800">Reports & Analytics</h3>
+                                             <div className="flex space-x-2">
+                         <button 
+                           onClick={handleExportReport}
+                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                         >
+                           <span>📊</span>
+                           <span>Export Report</span>
+                         </button>
+                       </div>
+                    </div>
+                    <p className="text-slate-600">Comprehensive store performance analytics and detailed reports.</p>
+                  </div>
+
+                  {/* Performance Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                         <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                       <div className="flex items-center justify-between mb-4">
+                         <h4 className="font-semibold text-slate-800">Daily Performance</h4>
+                         <span className="text-2xl">📈</span>
+                       </div>
+                       <div className="space-y-3">
+                         <div className="flex justify-between">
+                           <span className="text-slate-600">Sales Today:</span>
+                           <span className="font-semibold">${salesStats.totalSales.toFixed(2)}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-600">Transactions:</span>
+                           <span className="font-semibold">{salesStats.totalTransactions}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-600">Items Sold:</span>
+                           <span className="font-semibold">{salesStats.itemsSold}</span>
+                         </div>
+                       </div>
+                     </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-slate-800">Inventory Health</h4>
+                        <span className="text-2xl">📦</span>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Total Products:</span>
+                          <span className="font-semibold">{stats.totalProducts}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Low Stock:</span>
+                          <span className="font-semibold text-orange-600">{stats.lowStockItems}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Out of Stock:</span>
+                          <span className="font-semibold text-red-600">{stats.outOfStockItems}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-slate-800">Sales Metrics</h4>
+                        <span className="text-2xl">💰</span>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Total Revenue:</span>
+                          <span className="font-semibold">${salesStats.totalSales.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Avg. Ticket:</span>
+                          <span className="font-semibold">${salesStats.averageTicket.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Total Items:</span>
+                          <span className="font-semibold">{salesStats.itemsSold}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sales Trends */}
+                  <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
+                    <h4 className="font-semibold text-slate-800 mb-4">Sales Trends</h4>
+                    <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
+                      {salesStats.totalSales > 0 ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">Weekly Average</p>
+                              <p className="text-sm text-slate-600">Last 4 weeks</p>
+                            </div>
+                            <span className="font-semibold text-green-600">
+                              ${salesStats.totalSales > 0 ? (salesStats.totalSales / 4).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">Monthly Average</p>
+                              <p className="text-sm text-slate-600">Last 12 months</p>
+                            </div>
+                            <span className="font-semibold text-blue-600">
+                              ${salesStats.totalSales > 0 ? (salesStats.totalSales / 12).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-slate-800">Daily Average</p>
+                              <p className="text-sm text-slate-600">Last 30 days</p>
+                            </div>
+                            <span className="font-semibold text-purple-600">
+                              ${salesStats.totalSales > 0 ? (salesStats.totalSales / 30).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <span className="text-slate-500">No sales data available for trends</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </>
