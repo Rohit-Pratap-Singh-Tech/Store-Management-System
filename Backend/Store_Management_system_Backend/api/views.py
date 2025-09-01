@@ -11,8 +11,6 @@ from .serializers import CategorySerializer, ProductSerializer, SaleSerializer
 from rest_framework.decorators import api_view
 from .models import Transaction, Sale, Product
 
-
-
 # -------------------- CATEGORY API --------------------
 
 @api_view(['POST'])

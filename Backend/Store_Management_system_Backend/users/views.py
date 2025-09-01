@@ -205,3 +205,33 @@ def delete_user(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
+@api_view(['GET'])
+def get_staff_data(request):
+    try:
+        staff_roles = ['Manager', 'Cashier', 'Inventory Manager']
+        answer = []
+
+        for role in staff_roles:
+            user = User.objects(role=role).first()
+
+            if user:
+                user_data = {
+                    "status": "success",
+                    "full_name": user.full_name,
+                    "username": user.username,
+                    "role": role,
+                }
+            else:
+                user_data = {
+                    "status":"No user found",
+                    "full_name": None,
+                    "username": None,
+                    "role": role,
+                }
+
+            answer.append(user_data)
+
+        return Response({"status": "success", "data": answer}, status=200)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=500)
