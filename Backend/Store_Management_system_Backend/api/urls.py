@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-# from ai.views import assistant as ai_assistant
+
 
 
 urlpatterns = [
@@ -33,10 +33,5 @@ urlpatterns = [
     # # Transaction URLs
     path('transaction/add', views.transaction_add, name='transaction_add'),
     path('transaction/list', views.transaction_list, name='transaction_list'),
-    # path('transaction/search', views.transaction_search, name='transaction_search'),
     path('transaction/employee_transaction', views.transaction_search_with_employee, name='employee_sales'),
-    # path('transaction/employee_sales/date/<str:date>', views.employee_sales_by_date, name='employee_sales_by_date'),
-
-#     ai chart ___________________________________________________
-#     path('ai/assistant', ai_assistant, name='ai_assistant')
 ]

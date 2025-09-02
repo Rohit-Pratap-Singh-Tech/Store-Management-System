@@ -1,15 +1,11 @@
-from decimal import Decimal, InvalidOperation
-
-from django.contrib.auth import get_user_model
+from decimal import InvalidOperation
 from mongoengine.errors import DoesNotExist
 from rest_framework import status
+from datetime import datetime, timedelta
+from .models import Category
+from .serializers import CategorySerializer
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-from .models import Category, Product, Sale
-from .serializers import CategorySerializer, ProductSerializer, SaleSerializer
-from rest_framework.decorators import api_view
-from .models import Transaction, Sale, Product
+from decimal import Decimal
 
 # -------------------- CATEGORY API --------------------
 
@@ -279,12 +275,7 @@ def product_search(request):
 
 #
 # -------------------- SALE API --------------------
-from decimal import Decimal, InvalidOperation
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
 
-from .models import Sale   # Sale model
 # please provide as req as there is no check for is user resent or not make sure user is present  rohit
 @api_view(['POST'])
 def sale_add(request):
@@ -364,13 +355,6 @@ def sale_search(request):
         },
         status=status.HTTP_200_OK
     )
-
-from datetime import datetime, timedelta
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
-from .models import Sale
 
 @api_view(['GET'])
 def sell_this_week(request):
@@ -683,5 +667,3 @@ def transaction_search_with_employee(request):
             for sale in sales
         ]
     })
-
-
