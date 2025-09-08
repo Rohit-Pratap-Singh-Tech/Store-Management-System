@@ -63,12 +63,6 @@ const Navbar = () => {
               />
             </div>
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              Super Market
-            </h1>
-            <p className="text-xs text-slate-500 font-medium">Management System</p>
-          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -103,13 +97,6 @@ const Navbar = () => {
             className="px-6 py-2 text-slate-700 font-semibold hover:text-blue-600 transition-colors duration-300"
           >
             Sign In
-          </Link>
-          <Link
-            to="/login"
-            className="group relative px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <span className="relative">Get Started</span>
           </Link>
         </div>
 
@@ -179,13 +166,6 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Sign In
-            </Link>
-            <Link
-              to="/login"
-              className="block w-full text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Get Started
             </Link>
           </div>
         </div>
