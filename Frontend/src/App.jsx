@@ -8,6 +8,7 @@ import InventoryDashboard from './pages/InventoryDashboard.jsx'
 import ManagerDashboard from './pages/ManagerDashboard.jsx'
 import CashierDashboard from './pages/CashierDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute'
+import Chatbot from './components/Chatbot.jsx'
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function App() {
         {/* fallback for unauthorized users */}
         <Route path="/unauthorized" element={<h1>🚫 Access Denied</h1>} />
       </Routes>
+      <Chatbot />
     </Router>
   )
 }

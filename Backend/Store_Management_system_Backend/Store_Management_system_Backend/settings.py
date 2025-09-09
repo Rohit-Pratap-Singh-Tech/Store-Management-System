@@ -79,14 +79,12 @@ WSGI_APPLICATION = 'Store_Management_system_Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Use SQLite for Django's internal apps (auth, admin, sessions).
+# Application data uses MongoDB via mongoengine below.
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'Store_Management_System',
-        'ENFORCE_SCHEMA': False,
-        'CLIENT': {
-            'host': 'mongodb://127.0.0.1:27017',
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

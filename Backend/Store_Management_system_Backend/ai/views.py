@@ -16,9 +16,10 @@ from api.views import (
 # --- Configuration ---
 try:
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    _GENAI_READY = True
 except KeyError:
-    print("Warning: GEMINI_API_KEY not found. Using fallback key (NOT recommended).")
-    genai.configure(api_key="")
+    print("Warning: GEMINI_API_KEY not found. AI assistant disabled until provided.")
+    _GENAI_READY = False
 
 # --- Function and Tool Definitions ---
 FUNCTIONS = {
@@ -93,6 +94,11 @@ def assistant(request: Request):
         return Response({"error": "Query is required."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
+        if not _GENAI_READY:
+            return Response(
+                {"error": "AI assistant is not configured. Please set GEMINI_API_KEY on the server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         chat = model.start_chat()
         response = chat.send_message(user_query, tools=tools)
 
