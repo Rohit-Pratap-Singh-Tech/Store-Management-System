@@ -529,4 +529,16 @@ export const userAPI = {
   },
 };
 
+export const aiAPI = {
+  askAssistant: async (query) => {
+    try {
+      const response = await api.post('/ai/assistant/', { query });
+      return response.data;
+    } catch (error) {
+      console.error('Error querying AI assistant:', error);
+      throw error;
+    }
+  },
+};
+
 export default api;
