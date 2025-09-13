@@ -5,6 +5,7 @@ const SupermarketMap = () => {
   const canvasRef = useRef(null);
   const [currentPosition, setCurrentPosition] = useState({ x: 50, y: 850 });
   const [highlightedBlock, setHighlightedBlock] = useState(null);
+  const [hoveredBlock, setHoveredBlock] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -200,6 +201,21 @@ const SupermarketMap = () => {
     }
   }, [products, categories]);
 
+  // Helper function to draw rounded rectangles
+  const drawRoundedRect = (ctx, x, y, width, height, radius) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
+
   const drawMap = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -219,23 +235,56 @@ const SupermarketMap = () => {
     ctx.arc(entrance.x, entrance.y, 25, 0, 2 * Math.PI);
     ctx.fill();
     ctx.fillStyle = "#1e3a8a";
-    ctx.font = "1.2rem 'Poppins', sans-serif";
-    ctx.fillText("Entrance", entrance.x - 30, entrance.y + 45);
+    ctx.font = "1rem 'Poppins', sans-serif";
+    ctx.fillText("Entrance", entrance.x - 25, entrance.y + 40);
 
-    // Blocks
+    // Blocks with rounded corners, shadows, and hover effects
     blocks.forEach(block => {
-      ctx.fillStyle = (highlightedBlock && block.name === highlightedBlock.name) ? "#fde047" : "#dbeafe";
-      ctx.strokeStyle = "#1e3a8a";
-      ctx.lineWidth = 2;
-      ctx.fillRect(block.x, block.y, block.w, block.h);
-      ctx.strokeRect(block.x, block.y, block.w, block.h);
+      const isHighlighted = highlightedBlock && block.name === highlightedBlock.name;
+      const isHovered = hoveredBlock && block.name === hoveredBlock.name;
+      
+      // Set shadow properties
+      ctx.shadowColor = isHovered ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.2)';
+      ctx.shadowBlur = isHovered ? 15 : 8;
+      ctx.shadowOffsetX = isHovered ? 4 : 2;
+      ctx.shadowOffsetY = isHovered ? 6 : 3;
+      
+      // Determine block colors based on state
+      let fillColor = "#dbeafe"; // Default blue
+      let strokeColor = "#1e3a8a";
+      let strokeWidth = 2;
+      
+      if (isHighlighted) {
+        fillColor = "#fde047"; // Yellow for highlighted
+        strokeColor = "#f59e0b";
+        strokeWidth = 3;
+      } else if (isHovered) {
+        fillColor = "#e0f2fe"; // Lighter blue for hover
+        strokeColor = "#0284c7";
+        strokeWidth = 3;
+      }
+      
+      // Draw the rounded rectangle
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      
+      drawRoundedRect(ctx, block.x, block.y, block.w, block.h, 15);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Reset shadow for text
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
       
       // Block text
-      ctx.fillStyle = "#1e3a8a";
-      ctx.font = "2.5rem 'Poppins', sans-serif";
-      ctx.fillText(block.icon, block.x + 20, block.y + 65);
-      ctx.font = "1.2rem 'Poppins', sans-serif";
-      ctx.fillText(block.name, block.x + 80, block.y + 65);
+      ctx.fillStyle = isHovered ? "#0284c7" : "#1e3a8a";
+      ctx.font = "1.8rem 'Poppins', sans-serif";
+      ctx.fillText(block.icon, block.x + 15, block.y + 50);
+      ctx.font = "0.9rem 'Poppins', sans-serif";
+      ctx.fillText(block.name, block.x + 60, block.y + 50);
     });
 
     // Path
@@ -256,8 +305,8 @@ const SupermarketMap = () => {
     ctx.arc(currentPosition.x, currentPosition.y, userRadius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 1rem 'Poppins', sans-serif";
-    ctx.fillText("You", currentPosition.x - 12, currentPosition.y + 5);
+    ctx.font = "bold 0.8rem 'Poppins', sans-serif";
+    ctx.fillText("You", currentPosition.x - 10, currentPosition.y + 4);
   };
 
   const highlightProduct = () => {
@@ -293,6 +342,26 @@ const SupermarketMap = () => {
     if (block) {
       setHighlightedBlock(block);
     }
+  };
+
+  const handleCanvasMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / (rect.width / canvas.width);
+    const mouseY = (e.clientY - rect.top) / (rect.height / canvas.height);
+    
+    const block = blocks.find(b => 
+      mouseX >= b.x && mouseX <= b.x + b.w && 
+      mouseY >= b.y && mouseY <= b.y + b.h
+    );
+    
+    setHoveredBlock(block);
+  };
+
+  const handleCanvasMouseLeave = () => {
+    setHoveredBlock(null);
   };
 
   const handleKeyDown = (e) => {
@@ -336,7 +405,7 @@ const SupermarketMap = () => {
 
   useEffect(() => {
     drawMap();
-  }, [currentPosition, highlightedBlock]);
+  }, [currentPosition, highlightedBlock, hoveredBlock]);
 
   return (
     <div style={{
@@ -442,10 +511,14 @@ const SupermarketMap = () => {
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseLeave={handleCanvasMouseLeave}
           style={{
             display: 'block',
             width: '100%',
-            height: 'auto'
+            height: 'auto',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
           }}
         />
       </div>
