@@ -48,6 +48,7 @@ def category_delete(request):
     "description": "Gadgets, devices, and accessories.",
     "new_location": "Aisle 1"
 }'''
+
 @api_view(['PUT'])
 def category_update(request):
     category_name = request.data.get('category_name')
