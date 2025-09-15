@@ -11,9 +11,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent  # points to Backend/Store_Management_system_Backend
+ENV_PATH = BASE_DIR / '.env'
+load_dotenv(dotenv_path=ENV_PATH)
+
+# Strip any whitespace to remove invisible characters
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '').strip()
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '').strip()
 
 
 # Quick-start development settings - unsuitable for production
@@ -167,3 +174,12 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
+# Razorpay configuration (set your test/live keys in environment variables)
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '').strip()
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '').strip()
+
+# Optional debug
+print("ENV_PATH =", ENV_PATH)
+print("RAZORPAY_KEY_ID =", RAZORPAY_KEY_ID)
+print("RAZORPAY_KEY_SECRET =", RAZORPAY_KEY_SECRET)
