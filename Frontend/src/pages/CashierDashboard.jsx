@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
-import { productAPI, salesAPI } from '../services/api';
+import { productAPI, salesAPI, paymentsAPI } from '../services/api';
 import TransactionHistory from '../components/TransactionHistory';
 
 const CashierDashboard = () => {
@@ -49,6 +49,17 @@ const CashierDashboard = () => {
     totalTransactions: 0,
     averageTicket: 0,
     itemsSold: 0
+  });
+
+  // Receipt Modal State
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState({
+    saleId: '',
+    items: [],
+    total: 0,
+    customer: '',
+    paidVia: '',
+    paymentId: ''
   });
 
   // Fetch real data from API
@@ -259,6 +270,17 @@ const CashierDashboard = () => {
           })
         );
 
+        // Open receipt modal
+        setReceiptData({
+          saleId: response.sale_id,
+          items: response.items,
+          total: parseFloat(response.total_amount),
+          customer: transactionData.employee,
+          paidVia: 'Cash / Offline',
+          paymentId: ''
+        });
+        setIsReceiptOpen(true);
+
         // Refresh transactions and stats
         await Promise.all([
           fetchTransactions(),
@@ -283,6 +305,152 @@ const CashierDashboard = () => {
     } catch (error) {
       console.error('Transaction error:', error);
       showMessage('error', error.message || 'Failed to process transaction');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTransactionAfterPayment = async () => {
+    // Reuse existing transaction logic after successful payment
+    if (cart.length === 0) {
+      showMessage('error', 'Cart is empty');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const transactionData = {
+        employee: customerInfo.name || 'Cashier',
+        items: cart.map(item => ({
+          product_name: item.product_name,
+          quantity_sold: item.quantity
+        }))
+      };
+
+      const response = await salesAPI.addTransaction(transactionData);
+
+      if (response.status === 'success') {
+        const updatedProducts = response.items.map(item => ({
+          product_name: item.product,
+          quantity_in_stock: item.remaining_stock
+        }));
+
+        setProducts(prevProducts => 
+          prevProducts.map(product => {
+            const updatedProduct = updatedProducts.find(up => up.product_name === product.product_name);
+            return updatedProduct ? { ...product, quantity_in_stock: updatedProduct.quantity_in_stock } : product;
+          })
+        );
+
+        // Open receipt modal
+        setReceiptData({
+          saleId: response.sale_id,
+          items: response.items,
+          total: parseFloat(response.total_amount),
+          customer: transactionData.employee,
+          paidVia: 'Razorpay',
+          paymentId: ''
+        });
+        setIsReceiptOpen(true);
+
+        await Promise.all([
+          fetchTransactions(),
+          fetchSalesStats()
+        ]);
+
+        setCart([]);
+        setCustomerInfo({ name: '', phone: '', email: '' });
+
+        showMessage('success', `Payment successful and transaction completed! Total: $${response.total_amount}`);
+
+        console.log('Transaction completed:', {
+          sale_id: response.sale_id,
+          total_amount: response.total_amount,
+          items: response.items
+        });
+      } else {
+        throw new Error(response.message || 'Transaction failed');
+      }
+    } catch (error) {
+      console.error('Transaction error:', error);
+      showMessage('error', error.message || 'Failed to complete transaction after payment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePayWithRazorpay = async () => {
+    if (cart.length === 0) {
+      showMessage('error', 'Cart is empty');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const amount = Number(getCartTotal().toFixed(2));
+      const orderRes = await paymentsAPI.createOrder(amount);
+
+      if (orderRes.status !== 'success') {
+        throw new Error(orderRes.message || 'Failed to create order');
+      }
+
+      const { order } = orderRes;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+        amount: order.amount, // in paise
+        currency: order.currency || 'INR',
+        name: 'Store Management System',
+        description: 'POS Payment',
+        order_id: order.id,
+        prefill: {
+          name: customerInfo.name || 'Customer',
+          email: customerInfo.email || 'customer@example.com',
+          contact: customerInfo.phone || '9999999999',
+        },
+        theme: { color: '#7c3aed' },
+        handler: async function (response) {
+          try {
+            const verifyRes = await paymentsAPI.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (verifyRes.status === 'success') {
+              // Store payment id on receipt and continue
+              setReceiptData(prev => ({
+                ...prev,
+                paidVia: 'Razorpay',
+                paymentId: response.razorpay_payment_id
+              }));
+              await createTransactionAfterPayment();
+            } else {
+              showMessage('error', 'Payment verification failed');
+            }
+          } catch (err) {
+            console.error('Verification error:', err);
+            showMessage('error', 'Payment verification error');
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            showMessage('error', 'Payment cancelled');
+          }
+        }
+      };
+
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        showMessage('error', 'Razorpay SDK not loaded');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      showMessage('error', error.message || 'Failed to initiate payment');
     } finally {
       setLoading(false);
     }
@@ -573,18 +741,32 @@ const CashierDashboard = () => {
                     {/* Payment */}
                     <div className="bg-white rounded-xl p-6 shadow-lg border border-white/20">
                       <h3 className="text-lg font-semibold text-slate-800 mb-4">Payment</h3>
-                      <button
-                        onClick={processTransaction}
-                        disabled={cart.length === 0}
-                        className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                          cart.length > 0
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
-                            : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                        }`}
-                      >
-                        <CreditCard className="inline h-5 w-5 mr-2" />
-                        Process Payment
-                      </button>
+                      <div className="space-y-3">
+                        <button
+                          onClick={processTransaction}
+                          disabled={cart.length === 0}
+                          className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                            cart.length > 0
+                              ? 'bg-slate-800 text-white hover:bg-slate-900'
+                              : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          <CreditCard className="inline h-5 w-5 mr-2" />
+                          Process Without Online Payment
+                        </button>
+                        <button
+                          onClick={handlePayWithRazorpay}
+                          disabled={cart.length === 0}
+                          className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                            cart.length > 0
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                              : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          <CreditCard className="inline h-5 w-5 mr-2" />
+                          Pay with Razorpay
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -680,6 +862,51 @@ const CashierDashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Receipt Modal */}
+      {isReceiptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl p-6">
+            <div id="receipt-print-area">
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Store Receipt</h2>
+              <p className="text-sm text-slate-600">Sale ID: {receiptData.saleId}</p>
+              <p className="text-sm text-slate-600">Customer: {receiptData.customer || 'Guest'}</p>
+              <p className="text-sm text-slate-600">Paid Via: {receiptData.paidVia}</p>
+              {receiptData.paymentId && (
+                <p className="text-sm text-slate-600">Payment ID: {receiptData.paymentId}</p>
+              )}
+              <div className="my-4 border-t border-slate-200" />
+              <div className="space-y-2">
+                {receiptData.items.map((it, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span>{it.product} x {it.sold_quantity}</span>
+                    <span>${parseFloat(it.item_total).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 border-t border-slate-200 pt-2 flex justify-between font-semibold">
+                <span>Total</span>
+                <span>${Number(receiptData.total).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end space-x-3">
+              <button
+                onClick={() => setIsReceiptOpen(false)}
+                className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Print / Save PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

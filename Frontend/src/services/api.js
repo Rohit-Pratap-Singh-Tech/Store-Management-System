@@ -542,4 +542,33 @@ export const aiAPI = {
   },
 };
 
+// Payments API functions
+export const paymentsAPI = {
+  // Create Razorpay order
+  createOrder: async (amount) => {
+    try {
+      const response = await api.post('/payments/create-order/', { amount });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating Razorpay order:', error);
+      throw error;
+    }
+  },
+
+  // Verify Razorpay payment signature
+  verifyPayment: async ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => {
+    try {
+      const response = await api.post('/payments/verify-payment/', {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying Razorpay payment:', error);
+      throw error;
+    }
+  },
+};
+
 export default api;

@@ -6,7 +6,6 @@ from .models import Payment
 import logging
 
 logger = logging.getLogger(__name__)
-client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 
 @api_view(['POST'])
@@ -16,6 +15,15 @@ def create_order(request):
         return Response({"status": "error", "message": "Amount is required"}, status=400)
 
     try:
+        # Ensure keys exist
+        key_id = getattr(settings, 'RAZORPAY_KEY_ID', '') or ''
+        key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', '') or ''
+        if not key_id or not key_secret:
+            logger.error("Razorpay keys missing. Check Backend/.env and settings loading.")
+            return Response({"status": "error", "message": "Payment gateway not configured"}, status=500)
+
+        client = razorpay.Client(auth=(key_id, key_secret))
+
         amount_float = float(amount)
         if amount_float <= 0:
             return Response({"status": "error", "message": "Amount must be greater than 0"}, status=400)
@@ -60,6 +68,13 @@ def verify_payment(request):
             return Response({"status": "error", "message": f"{field} is required"}, status=400)
 
     try:
+        key_id = getattr(settings, 'RAZORPAY_KEY_ID', '') or ''
+        key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', '') or ''
+        if not key_id or not key_secret:
+            return Response({"status": "error", "message": "Payment gateway not configured"}, status=500)
+
+        client = razorpay.Client(auth=(key_id, key_secret))
+
         client.utility.verify_payment_signature({
             "razorpay_order_id": data["razorpay_order_id"],
             "razorpay_payment_id": data["razorpay_payment_id"],
