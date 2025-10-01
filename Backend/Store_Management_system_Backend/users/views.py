@@ -103,6 +103,22 @@ def login_user(request):
 
 
 
+@api_view(['GET'])
+def list_users(request):
+    try:
+        users = User.objects.all()
+        data = [
+            {
+                "full_name": u.full_name,
+                "username": u.username,
+                "role": u.role.value if hasattr(u.role, 'value') else str(u.role),
+            }
+            for u in users
+        ]
+        return Response({"status": "success", "users": data}, status=200)
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=500)
+
 # front should have logic to check if the user is logged in and is an admin
 # if not, it should redirect to the login page
 @api_view(['POST'])

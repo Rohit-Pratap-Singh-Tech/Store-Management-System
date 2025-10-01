@@ -7,6 +7,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),    
     path('api/', include('api.urls')),
     path('login/', views.login_user, name='login'),
+    path('list/', views.list_users, name='list_users'),
     path('register/', views.register_staff, name='register'),
     path('password/change/', views.change_password, name='change_password'),
     path('delete/', views.delete_user, name='delete_user'),

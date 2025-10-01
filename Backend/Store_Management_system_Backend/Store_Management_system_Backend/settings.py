@@ -178,8 +178,3 @@ CORS_ALLOW_METHODS = [
 # Razorpay configuration (set your test/live keys in environment variables)
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '').strip()
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '').strip()
-
-# Optional debug
-print("ENV_PATH =", ENV_PATH)
-print("RAZORPAY_KEY_ID =", RAZORPAY_KEY_ID)
-print("RAZORPAY_KEY_SECRET =", RAZORPAY_KEY_SECRET)
