@@ -1,11 +1,114 @@
-from decimal import InvalidOperation
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from decimal import Decimal, InvalidOperation
 from mongoengine.errors import DoesNotExist
 from rest_framework import status
 from datetime import datetime, timedelta
-from .models import Category
+from .models import Category, Product, Sale, Transaction
 from .serializers import CategorySerializer
-from rest_framework.decorators import api_view
-from decimal import Decimal
+from email.message import EmailMessage
+from pymongo import MongoClient
+import smtplib
+import os
+
+# --- MongoDB connection for user queries ---
+mongo_client = MongoClient("mongodb://localhost:27017/")
+db = mongo_client["Store_Management_System"]
+users_collection = db["users"]
+
+# --- Email Configuration from Environment ---
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "465"))
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_FROM = os.getenv("EMAIL_FROM", EMAIL_USER)
+
+
+# --- Email Utility ---
+def send_email(subject, body, recipients):
+    """Reusable email sender with environment variable configuration"""
+    if not recipients:
+        print("No recipients provided")
+        return
+
+    if not EMAIL_USER or not EMAIL_PASSWORD:
+        print("⚠️ Warning: Email credentials not configured in .env file")
+        return
+
+    try:
+        msg = EmailMessage()
+        msg["From"] = EMAIL_FROM
+        msg["To"] = ", ".join(recipients)
+        msg["Subject"] = subject
+        msg.set_content(body)
+
+        with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT) as smtp:
+            smtp.login(EMAIL_USER, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+
+        print(f"✅ Email sent successfully to {len(recipients)} recipient(s)")
+    except Exception as e:
+        print(f"❌ Failed to send email: {str(e)}")
+
+
+# --- ADMIN ALERT FUNCTION ---
+def send_admin_alert(product):
+    """Send low-stock alert to all admins"""
+    try:
+        admin_emails = [
+            user["username"] for user in users_collection.find(
+                {"role": "Admin"},  # ✅ Case-sensitive fix
+                {"username": 1, "_id": 0}
+            ) if user.get("username")
+        ]
+
+        if not admin_emails:
+            print("⚠️ No admin usernames (emails) found in database")
+            return
+
+        subject = f"⚠️ Low Stock Alert: {product.product_name}"
+        body = (
+            f"Dear Admin,\n\n"
+            f"The product '{product.product_name}' is low on stock.\n"
+            f"Current Quantity: {product.quantity_in_stock}\n"
+            f"Location: {product.location}\n\n"
+            f"Please take action to restock.\n\n"
+            f"— Inventory Management System"
+        )
+        send_email(subject, body, admin_emails)
+        print(f"📧 Admin alert sent for: {product.product_name}")
+    except Exception as e:
+        print(f"❌ Error sending admin alert: {str(e)}")
+
+
+# --- MANAGER ALERT FUNCTION ---
+def send_manager_alert(product):
+    """Send low-stock alert to all managers"""
+    try:
+        manager_emails = [
+            user["username"] for user in users_collection.find(
+                {"role": "Manager"},
+                {"username": 1, "_id": 0}
+            ) if user.get("username")
+        ]
+
+        if not manager_emails:
+            print("⚠️ No manager usernames (emails) found in database")
+            return
+
+        subject = f"⚠️ Stock Running Low: {product.product_name}"
+        body = (
+            f"Dear Manager,\n\n"
+            f"The product '{product.product_name}' has limited stock left.\n"
+            f"Current Quantity: {product.quantity_in_stock}\n"
+            f"Location: {product.location}\n\n"
+            f"Please coordinate with admin for restocking.\n\n"
+            f"— Inventory Management System"
+        )
+        send_email(subject, body, manager_emails)
+        print(f"📧 Manager alert sent for: {product.product_name}")
+    except Exception as e:
+        print(f"❌ Error sending manager alert: {str(e)}")
 
 # -------------------- CATEGORY API --------------------
 
@@ -24,9 +127,7 @@ def category_list(request):
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
-'''{
-    "category_name": "Electronics",
-}'''
+
 @api_view(['DELETE'])
 def category_delete(request):
     category_name = request.data.get('category_name')
@@ -42,12 +143,6 @@ def category_delete(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-'''{
-    "category_name": "Electronics",
-    "new_category_name":"Computer",
-    "description": "Gadgets, devices, and accessories.",
-    "new_location": "Aisle 1"
-}'''
 
 @api_view(['PUT'])
 def category_update(request):
@@ -55,7 +150,6 @@ def category_update(request):
     new_category_name = request.data.get('new_category_name')
     new_location = request.data.get('new_location', '')
     description = request.data.get('description', '')
-
 
     if not category_name or not new_category_name:
         return Response({"status": "error", "message": "Category name and new category name are required"}, status=400)
@@ -74,19 +168,7 @@ def category_update(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-'''
-{
-    "category_name": "Computer"
-}
 
-{
-    "status": "success",
-    "category": {
-        "category_name": "Computer",
-        "description": "Gadgets, devices, and accessories.",
-        "products": []
-    }
-}'''
 @api_view(['GET'])
 def category_search(request):
     category_name = request.query_params.get('category_name') or request.data.get('category_name')
@@ -116,16 +198,7 @@ def category_search(request):
         return Response({"status": "error", "message": "Category not found"}, status=404)
 
 
-#
-'''{
-    "product_name": "Computer1",
-    "price": 999.99,
-    "category_name": "Computer",
-    "quantity_in_stock": 10,
-    "location": "Aisle 3"
-}'''
 # -------------------- PRODUCT API --------------------
-
 
 @api_view(['POST'])
 def product_add(request):
@@ -154,17 +227,19 @@ def product_add(request):
             location=location
         )
         product.save()
+
+        # ✅ Check if low stock alert needed on creation
+        if product.quantity_in_stock < 5:
+            send_admin_alert(product)
+            send_manager_alert(product)
+
         return Response({"status": "success", "message": "Product added successfully"}, status=201)
     except DoesNotExist:
         return Response({"status": "error", "message": "Category not found"}, status=404)
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-'''
-{
-    "product_name": "Computer1"
-}
-'''
+
 @api_view(['DELETE'])
 def product_delete(request):
     product_name = request.data.get('product_name')
@@ -179,18 +254,9 @@ def product_delete(request):
         return Response({"status": "error", "message": "Product not found"}, status=404)
 
 
-'''
-{
-    "product_name": "Laptop1",      // Required: Current name of the product to update
-    "new_product_name": "Laptop3",    // Optional: New name for the product
-    "price": 1299.99,                 // Optional: New price for the product
-    "category_name": "Electronics",    // Optional: New category for the product
-    "quantity_in_stock": 15           // Optional: New stock quantity
-    "location": "Aisle 3"              // Optional: New location for the product
-}
-'''
 @api_view(['PUT'])
 def product_update(request):
+    """Update product and send email alerts if stock falls below 5"""
     product_name = request.data.get('product_name')
     new_product_name = request.data.get('new_product_name')
     new_price = request.data.get('price')
@@ -223,11 +289,25 @@ def product_update(request):
             product.location = new_location
 
         product.save()
-        return Response({"status": "success", "message": "Product updated successfully"}, status=200)
+
+        # ✅ Send email alerts if stock is below threshold
+        alert_sent = False
+        if product.quantity_in_stock < 5:
+            send_admin_alert(product)
+            send_manager_alert(product)
+            alert_sent = True
+
+        return Response({
+            "status": "success",
+            "message": "Product updated successfully",
+            "low_stock_alert_sent": alert_sent,
+            "current_stock": product.quantity_in_stock
+        }, status=200)
+
     except DoesNotExist:
         return Response({"status": "error", "message": "Product or category not found"}, status=404)
 
-# for all products if you want to search by category of product go to upper in category_search
+
 @api_view(['GET'])
 def product_list(request):
     try:
@@ -246,11 +326,6 @@ def product_list(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-'''
-{
-    "product_name": "Laptop2"
-}
-'''
 
 @api_view(['GET'])
 def product_search(request):
@@ -274,10 +349,9 @@ def product_search(request):
     except DoesNotExist:
         return Response({"status": "error", "message": "Product not found"}, status=404)
 
-#
+
 # -------------------- SALE API --------------------
 
-# please provide as req as there is no check for is user resent or not make sure user is present  rohit
 @api_view(['POST'])
 def sale_add(request):
     employee_username = request.data.get('employee_username')
@@ -297,7 +371,6 @@ def sale_add(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Store only the username string, without checking if the user exists
     sale = Sale(employee=employee_username, total_amount=total_amount)
     sale.save()
     return Response(
@@ -308,6 +381,7 @@ def sale_add(request):
         },
         status=status.HTTP_201_CREATED
     )
+
 
 @api_view(['GET'])
 def sale_list(request):
@@ -325,6 +399,7 @@ def sale_list(request):
         return Response({"status": "success", "sales": sales_data}, status=200)
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
+
 
 @api_view(['GET'])
 def sale_search(request):
@@ -356,6 +431,7 @@ def sale_search(request):
         },
         status=status.HTTP_200_OK
     )
+
 
 @api_view(['GET'])
 def sell_this_week(request):
@@ -428,6 +504,7 @@ def sell_this_year(request):
         ]
     }, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def sell_per_week(request):
     """Get sales grouped by ISO week for all time"""
@@ -458,6 +535,7 @@ def sell_per_week(request):
     ]
 
     return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 def sell_per_month(request):
@@ -490,6 +568,7 @@ def sell_per_month(request):
 
     return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def sell_per_year(request):
     """Get sales grouped by year for all time"""
@@ -517,15 +596,12 @@ def sell_per_year(request):
 
     return Response({"status": "success", "data": result}, status=status.HTTP_200_OK)
 
-#  ---------------------Transaction Api---------------------------
-from decimal import Decimal
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Sale, Product, Transaction
+
+# ---------------------Transaction Api---------------------------
 
 @api_view(['POST'])
 def transaction_add(request):
-    items = request.data.get("items")  # list of { product_name, quantity_sold }
+    items = request.data.get("items")
     employee = request.data.get("employee")
 
     if not all([items, employee]):
@@ -540,13 +616,13 @@ def transaction_add(request):
     transactions_data = []
     total_amount = Decimal("0.00")
 
-    # Validate products & stock first
     for item in items:
         product_name = item.get("product_name")
         quantity_sold = item.get("quantity_sold")
 
         if not all([product_name, quantity_sold]):
-            return Response({"status": "error", "message": "Each item must have product_name and quantity_sold"}, status=400)
+            return Response({"status": "error", "message": "Each item must have product_name and quantity_sold"},
+                            status=400)
 
         try:
             product = Product.objects(product_name=product_name).first()
@@ -575,13 +651,11 @@ def transaction_add(request):
         except ValueError:
             return Response({"status": "error", "message": "Invalid quantity"}, status=400)
 
-    # 1. Create Sale with total_amount
     sale = Sale(
         employee=employee,
         total_amount=total_amount
     ).save()
 
-    # 2. Create Transactions and update stock
     transaction_ids = []
     for t in transactions_data:
         transaction = Transaction(
@@ -591,9 +665,14 @@ def transaction_add(request):
             price_at_sale=t["price_at_sale"]
         ).save()
 
-        # Decrease stock
         t["product"].quantity_in_stock -= t["quantity_sold"]
         t["product"].save()
+
+        # ✅ Check if low stock alert needed after transaction
+        if t["product"].quantity_in_stock < 5:
+            send_admin_alert(t["product"])
+            send_manager_alert(t["product"])
+
         transaction_ids.append(str(transaction.id))
 
     return Response({
@@ -613,6 +692,7 @@ def transaction_add(request):
             for t in transactions_data
         ]
     }, status=201)
+
 
 @api_view(['GET'])
 def transaction_list(request):
@@ -636,6 +716,7 @@ def transaction_list(request):
         ]
     })
 
+
 @api_view(['GET'])
 def transaction_search_with_employee(request):
     employee_username = request.query_params.get('employee_username') or request.data.get('employee_username')
@@ -644,7 +725,8 @@ def transaction_search_with_employee(request):
 
     sales = Sale.objects(employee=employee_username)
     if not sales:
-        return Response({"status": "error", "message": f"No sales found for employee '{employee_username}'"}, status=404)
+        return Response({"status": "error", "message": f"No sales found for employee '{employee_username}'"},
+                        status=404)
 
     return Response({
         "status": "success",

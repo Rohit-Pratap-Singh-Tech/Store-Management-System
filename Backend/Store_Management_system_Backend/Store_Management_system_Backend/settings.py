@@ -101,7 +101,8 @@ DATABASES = {
 import mongoengine
 mongoengine.connect(
     db="Store_Management_System",
-    host="mongodb://localhost:27017/Store_Management_System"
+    host="mongodb://localhost:27017/Store_Management_System",
+    uuidRepresentation="standard"
 )
 
 

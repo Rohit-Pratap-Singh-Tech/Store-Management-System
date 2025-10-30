@@ -1,9 +1,10 @@
 import razorpay
+import logging
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 from .models import Payment
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -118,13 +119,20 @@ def verify_payment(request):
         return Response({"status": "error", "message": "Payment verification failed"}, status=500)
 
 
-@api_view(['GET'])
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Payment
+
+@api_view(['GET'])  # ✅ Add this decorator
 def get_payment_status(request, order_id):
-    """Get payment status by order ID"""
     try:
         payment = Payment.objects(order_id=order_id).first()
         if not payment:
-            return Response({"status": "error", "message": "Payment not found"}, status=404)
+            return Response({
+                "status": "error",
+                "message": "Payment not found"
+            }, status=status.HTTP_404_NOT_FOUND)
 
         return Response({
             "status": "success",
@@ -134,10 +142,11 @@ def get_payment_status(request, order_id):
                 "amount": payment.amount,
                 "status": payment.status,
                 "created_at": payment.created_at,
-                "updated_at": payment.updated_at
             }
-        }, status=200)
+        }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"Error fetching payment status: {str(e)}")
-        return Response({"status": "error", "message": "Failed to fetch payment status"}, status=500)
+        return Response({
+            "status": "error",
+            "message": f"Failed to fetch payment status: {str(e)}"
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
