@@ -89,7 +89,7 @@ def category_update(request):
 }'''
 @api_view(['GET'])
 def category_search(request):
-    category_name = request.data.get('category_name')
+    category_name = request.query_params.get('category_name') or request.data.get('category_name')
     if not category_name:
         return Response({"status": "error", "message": "Category name is required"}, status=400)
 
@@ -254,7 +254,7 @@ def product_list(request):
 
 @api_view(['GET'])
 def product_search(request):
-    product_name = request.data.get('product_name')
+    product_name = request.query_params.get('product_name') or request.data.get('product_name')
     if not product_name:
         return Response({"status": "error", "message": "Product name is required"}, status=400)
 
@@ -328,7 +328,7 @@ def sale_list(request):
 
 @api_view(['GET'])
 def sale_search(request):
-    employee_username = request.data.get('employee_username')
+    employee_username = request.query_params.get('employee_username') or request.data.get('employee_username')
     if not employee_username:
         return Response(
             {"status": "error", "message": "Employee username is required"},
@@ -638,7 +638,7 @@ def transaction_list(request):
 
 @api_view(['GET'])
 def transaction_search_with_employee(request):
-    employee_username = request.data.get('employee_username')
+    employee_username = request.query_params.get('employee_username') or request.data.get('employee_username')
     if not employee_username:
         return Response({"status": "error", "message": "employee_username is required"}, status=400)
 

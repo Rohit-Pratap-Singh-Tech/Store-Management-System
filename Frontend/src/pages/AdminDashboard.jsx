@@ -139,12 +139,17 @@ const AdminDashboard = () => {
         setTopProducts([]);
       }
 
-      // Set recent activities to empty array (removed as requested)
-        setRecentActivities([]);
-
-      // Set staff members (set to empty for now since user list endpoint doesn't exist)
+      // Load staff from backend
+      try {
+        const userList = await userAPI.getAllUsers();
+        const users = Array.isArray(userList?.users) ? userList.users : [];
+        setStaffMembers(users);
+      } catch (e) {
+        console.error('Failed to load users:', e);
         setStaffMembers([]);
-        setNotifications(0);
+      }
+
+      setNotifications(0);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -159,7 +164,6 @@ const AdminDashboard = () => {
       setStaffMembers([]);
       setNotifications(0);
       
-      // More specific error message
       if (error.response?.status === 404) {
         showMessage('Backend API endpoints not found. Please check if the backend is running.', 'error');
       } else if (error.response?.status >= 500) {
@@ -167,7 +171,7 @@ const AdminDashboard = () => {
       } else if (error.code === 'ECONNREFUSED') {
         showMessage('Cannot connect to backend server. Please ensure the backend is running on port 8000.', 'error');
       } else {
-      showMessage('Failed to fetch dashboard data. Please check your backend connection.', 'error');
+        showMessage('Failed to fetch dashboard data. Please check your backend connection.', 'error');
       }
     } finally {
       setLoading(false);
@@ -214,10 +218,10 @@ const AdminDashboard = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const handleStaffDelete = async (staffName, staffId) => {
+  const handleStaffDelete = async (staffName, staffUsername) => {
     if (window.confirm(`Are you sure you want to delete ${staffName}?`)) {
       try {
-        await userAPI.deleteUser(staffId);
+        await userAPI.deleteUser(staffUsername);
         showMessage(`${staffName} has been removed from the system.`, 'success');
         fetchDashboardData();
       } catch (err) {
@@ -738,7 +742,7 @@ const AdminDashboard = () => {
                               </span>
                               <button
                                 className="text-red-500 hover:text-red-700"
-                                onClick={() => handleStaffDelete(staff.full_name || staff.username, staff.id)}
+                                onClick={() => handleStaffDelete(staff.full_name || staff.username, staff.username)}
                               >
                                 <span className="text-lg">🗑️</span>
                               </button>

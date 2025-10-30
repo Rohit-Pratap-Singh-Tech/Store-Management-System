@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 import google.generativeai as genai
 
 from rest_framework.decorators import api_view
@@ -10,10 +11,15 @@ from rest_framework import status
 from api.views import (
     sell_this_week, sell_this_month, sell_this_year,
     sell_per_week, sell_per_month, sell_per_year,
-    product_list, transaction_list, transaction_search_with_employee
+    product_list, product_search,
+    category_list, category_search,
+    sale_list, sale_search,
+    transaction_list, transaction_search_with_employee
 )
 
 # --- Configuration ---
+# Load environment variables from a local .env if present
+load_dotenv()
 try:
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     _GENAI_READY = True
@@ -30,6 +36,11 @@ FUNCTIONS = {
     "sell_per_month": sell_per_month,
     "sell_per_year": sell_per_year,
     "product_list": product_list,
+    "product_search": product_search,
+    "category_list": category_list,
+    "category_search": category_search,
+    "sale_list": sale_list,
+    "sale_search": sale_search,
     "transaction_list": transaction_list,
     "transaction_search_with_employee": transaction_search_with_employee,
 }
@@ -38,7 +49,12 @@ FUNCTIONS = {
 NO_PARAM_FUNCTIONS = {
     "sell_this_week", "sell_this_month", "sell_this_year",
     "sell_per_week", "sell_per_month", "sell_per_year",
-    "product_list", "transaction_list"
+    "product_list", "category_list", "sale_list", "transaction_list"
+}
+
+# Functions that require parameters but must be called via GET (views are @api_view(['GET']))
+PARAM_GET_FUNCTIONS = {
+    "product_search", "category_search", "sale_search", "transaction_search_with_employee"
 }
 
 tools = [
@@ -51,6 +67,41 @@ tools = [
             {"name": "sell_per_month", "description": "Get sales grouped by month for all time."},
             {"name": "sell_per_year", "description": "Get sales grouped by year for all time."},
             {"name": "product_list", "description": "Get a list of all products in the store."},
+            {
+                "name": "product_search",
+                "description": "Get details for a product by exact name.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "product_name": {"type": "string", "description": "Exact product name."}
+                    },
+                    "required": ["product_name"]
+                }
+            },
+            {"name": "category_list", "description": "List all categories."},
+            {
+                "name": "category_search",
+                "description": "Get a category and its products by name.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "category_name": {"type": "string", "description": "Exact category name."}
+                    },
+                    "required": ["category_name"]
+                }
+            },
+            {"name": "sale_list", "description": "List all sales."},
+            {
+                "name": "sale_search",
+                "description": "Get sales for a specific employee.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "employee_username": {"type": "string", "description": "Employee username."}
+                    },
+                    "required": ["employee_username"]
+                }
+            },
             {"name": "transaction_list", "description": "Get a list of all transactions ever made."},
             {
                 "name": "transaction_search_with_employee",
@@ -73,13 +124,18 @@ tools = [
 SYSTEM_INSTRUCTION = (
     "You are a helpful retail assistant. "
     "Use the provided tools to answer questions about sales, products, and transactions. "
-    "When users ask about sales 'till now' or 'so far', use sell_this_year to get current year sales. "
-    "When they ask for weekly/monthly/yearly breakdowns, use the respective sell_per_* functions."
+    "When users ask about sales 'till now' or 'so far', use sell_this_year. "
+    "For weekly/monthly/yearly breakdowns, use the sell_per_* functions. "
+    "For product availability, price, stock, and location, use product_search or product_list. "
+    "For categories and their products, use category_list or category_search. "
+    "For employee-specific sales, use sale_search or transaction_search_with_employee. "
+    "If a parameter is missing, ask the user for the exact name needed."
 )
 
 # Initialize the model
+# Use a supported model identifier
 model = genai.GenerativeModel(
-    model_name='gemini-1.5-flash',
+    model_name='gemini-2.0-flash',
     system_instruction=SYSTEM_INSTRUCTION
 )
 
@@ -134,12 +190,12 @@ def assistant(request: Request):
                     try:
                         factory = APIRequestFactory()
 
-                        # Handle functions differently based on whether they need parameters
+                        # Route to correct HTTP method based on backend view definitions
                         if function_name in NO_PARAM_FUNCTIONS:
-                            # For functions that don't need parameters, use GET
                             mock_request = factory.get('/')
+                        elif function_name in PARAM_GET_FUNCTIONS:
+                            mock_request = factory.get('/', function_args, format='json')
                         else:
-                            # For functions that need parameters, use POST with data
                             mock_request = factory.post('/', function_args, format='json')
 
                         # Don't wrap in Request again - APIRequestFactory already creates the right type
