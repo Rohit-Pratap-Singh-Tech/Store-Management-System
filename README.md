@@ -1,208 +1,113 @@
-<img src="https://placehold.co/1200x400/2563eb/ffffff?text=Supermarket+Management+System" alt="Supermarket Management System Banner" />
+# 🛒 Supermarket Management System
 
-# 🛒 Supermarket Store Management System
+A full-stack retail management platform built to streamline supermarket operations including inventory tracking, billing, employee management, analytics, and customer handling.
 
-### A comprehensive full-stack solution for modern retail operations
-
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](http://makeapullrequest.com)
-
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Documentation](#-documentation) • [Contributing](#-contributing)
-
-</div>
+The system is designed for scalability and real-world retail workflows, providing role-based access, real-time inventory monitoring, sales reporting, and an integrated point-of-sale experience.
 
 ---
 
-## 📋 Table of Contents
+## 📌 Overview
 
-- [About](#-about)
-- [Features](#-features)
-- [Demo](#-demo)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Installation](#-installation)
-- [Project Structure](#-project-structure)
-- [API Documentation](#-api-documentation)
-- [Contributing](#-contributing)
-- [Team](#-team)
-- [License](#-license)
+Managing a supermarket involves handling inventory, billing, staff operations, suppliers, and customer records simultaneously. This project centralizes those operations into a single platform with a modern frontend and secure backend architecture.
 
----
+The application focuses on:
 
-## 🎯 About
-
-The **Supermarket Store Management System** is an enterprise-grade application designed to revolutionize retail operations. Built with modern technologies, it provides a seamless experience for managing inventory, sales, employees, and customer interactions in real-time.
-
-### Why This Project?
-
-- 🔄 **Automate** manual retail processes
-- 📊 **Analyze** business performance with advanced analytics
-- 🔒 **Secure** sensitive data with industry-standard authentication
-- 🎨 **Enhance** customer experience with intuitive interfaces
-- 📈 **Scale** your business operations effortlessly
+- Efficient inventory and sales management
+- Secure authentication and role-based access
+- Real-time operational visibility
+- Scalable backend architecture
+- Clean and responsive user experience
 
 ---
 
 ## ✨ Features
 
-### 🔐 Security & Authentication
-- JWT-based authentication system
-- Role-based access control (RBAC)
-- Encrypted password storage
-- Session management
-
-### 👨‍💼 Management Dashboard
-- **Multi-role support**: Admin, Manager, Cashier, Inventory Staff
-- Real-time sales analytics and reporting
-- Employee management and scheduling
-- Supplier relationship management
-- Customizable notification system
+### 🔐 Authentication & Security
+- JWT-based authentication
+- Role-based access control (Admin, Manager, Cashier, Inventory Staff)
+- Secure password hashing
+- Session management and protected routes
 
 ### 📦 Inventory Management
 - Real-time stock tracking
-- Automated low-stock alerts
-- Product categorization and tagging
-- Barcode/QR code integration
-- Batch and expiry date management
-- Supplier order management
+- Product categorization
+- Low-stock alerts
+- Batch and expiry management
+- Supplier management
+- Barcode and QR support
 
-### 💰 Point of Sale (POS)
-- Fast and intuitive checkout process
-- Multiple payment methods support
+### 💳 Point of Sale (POS)
+- Fast checkout workflow
+- Multiple payment methods
 - Discount and promotion handling
-- Digital receipt generation
-- Return and refund processing
-- Sales history tracking
+- Receipt generation
+- Refund and return processing
+- Transaction history
 
-### 🗺️ Interactive Store Map
-- 2D visualization of store layout
-- Product location finder
-- Block-based organization (Zones A, B, C)
-- Real-time stock availability display
-
-### 📊 Analytics & Reporting
+### 📊 Dashboard & Analytics
 - Daily, weekly, and monthly sales reports
-- Profit margin analysis
-- Best-selling products tracking
-- Customer purchase patterns
-- Inventory turnover reports
-- Export reports in multiple formats (PDF, CSV, Excel)
+- Revenue and profit analysis
+- Best-selling product tracking
+- Inventory turnover insights
+- Customer purchase analytics
+- Export reports in CSV, Excel, and PDF formats
+
+### 🏪 Store Management
+- Employee management
+- Shift and scheduling support
+- Notification system
+- Interactive store layout visualization
+- Product location tracking
 
 ### 👥 Customer Features
-- Loyalty program management
-- Purchase history tracking
+- Loyalty program support
+- Purchase history
 - Digital receipts
-- Customer feedback system
-
----
-
-## 🎬 Demo
-
-<div align="center">
-
-### Application Preview
-
-<img src="https://placehold.co/800x450/3b82f6/ffffff?text=Dashboard+Preview" alt="Dashboard Preview" />
-
-</div>
-
-<details>
-<summary><b>📸 View More Screenshots</b></summary>
-
-<br/>
-
-### Admin Dashboard
-<img src="https://placehold.co/800x450/2563eb/ffffff?text=Admin+Dashboard" alt="Admin Dashboard" />
-
-### Inventory Management
-<img src="https://placehold.co/800x450/2563eb/ffffff?text=Inventory+Management" alt="Inventory Management" />
-
-### POS System
-<img src="https://placehold.co/800x450/2563eb/ffffff?text=POS+System" alt="POS System" />
-
-### Interactive Store Map
-<img src="https://placehold.co/800x450/2563eb/ffffff?text=Store+Map" alt="Store Map" />
-
-</details>
+- Feedback system
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-```
-React 18          - UI Library
-Vite              - Build Tool
-React Router      - Navigation
-Axios             - HTTP Client
-Tailwind CSS      - Styling
-Framer Motion     - Animations
-Lucide React      - Icons
-```
+- React 18
+- Vite
+- React Router
+- Tailwind CSS
+- Axios
+- Framer Motion
 
 ### Backend
-```
-Python 3.10+           - Programming Language
-Django 4.2             - Web Framework
-Django REST Framework  - API Development
-Djongo                 - MongoDB ODM
-PyJWT                  - Authentication
-```
+- Django
+- Django REST Framework
+- PyJWT
+- Djongo
 
 ### Database
-```
-MongoDB               - NoSQL Database
-```
+- MongoDB
 
 ### DevOps & Tools
-```
-Git                   - Version Control
-Docker (Optional)     - Containerization
-```
+- Git
+- Docker (Optional)
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
+```text
+Client (React + Tailwind)
+        │
+        ▼
+REST API Layer (Django REST Framework)
+        │
+        ▼
+Business Logic & Services
+        │
+        ▼
+MongoDB Database
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                             │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   React UI   │  │ React Router │  │  Tailwind    │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                              ↕ HTTP/REST
-┌─────────────────────────────────────────────────────────────────┐
-│                         API LAYER                                │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Django REST  │  │     JWT      │  │   CORS       │          │
-│  │  Framework   │  │     Auth     │  │   Headers    │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                              ↕ ORM/ODM
-┌─────────────────────────────────────────────────────────────────┐
-│                      BUSINESS LOGIC LAYER                        │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Models     │  │  Services    │  │  Validators  │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                              ↕ Djongo
-┌─────────────────────────────────────────────────────────────────┐
-│                        DATABASE LAYER                            │
-│                                                                   │
-│                      ┌──────────────┐                            │
-│                      │   MongoDB    │                            │
-│                      └──────────────┘                            │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+The frontend communicates with the backend using REST APIs. Authentication is handled using JWT tokens, while MongoDB stores application data including users, products, sales records, and inventory information.
 
 ---
 
@@ -210,300 +115,222 @@ Docker (Optional)     - Containerization
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+Make sure the following are installed on your system:
 
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **Python** (v3.10 or higher) - [Download](https://www.python.org/)
-- **MongoDB** (Community Server) - [Download](https://www.mongodb.com/try/download/community)
-- **Git** - [Download](https://git-scm.com/)
+- Node.js (v18+)
+- Python (v3.10+)
+- MongoDB
+- Git
 
-### Quick Start
+---
 
-#### 1️⃣ Clone the Repository
+## 📥 Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/supermarket-management-system.git
+
 cd supermarket-management-system
 ```
 
-#### 2️⃣ Backend Setup
+---
+
+## ⚙️ Backend Setup
 
 ```bash
-# Navigate to backend directory
 cd backend
 
-# Create virtual environment
 python -m venv venv
+```
 
-# Activate virtual environment
-# On Windows:
+### Activate Virtual Environment
+
+#### Windows
+```bash
 venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
+```
 
-# Install dependencies
+#### Linux/macOS
+```bash
+source venv/bin/activate
+```
+
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-**Create `.env` file in backend directory:**
+### Configure Environment Variables
+
+Create a `.env` file inside the `backend` directory:
 
 ```env
-SECRET_KEY=your_django_secret_key_here
+SECRET_KEY=your_secret_key
 MONGO_URI=mongodb://localhost:27017/supermarket_db
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-**Run migrations and start server:**
+### Run the Server
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
-python manage.py createsuperuser  # Create admin account
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-✅ Backend running at: `http://127.0.0.1:8000`
+Backend will run at:
 
-#### 3️⃣ Frontend Setup
+```text
+http://127.0.0.1:8000
+```
 
-Open a new terminal:
+---
+
+## 🎨 Frontend Setup
+
+Open another terminal:
 
 ```bash
-# Navigate to frontend directory
 cd frontend
 
-# Install dependencies
 npm install
 
-# Start development server
 npm run dev
 ```
 
-✅ Frontend running at: `http://localhost:5173`
+Frontend will run at:
 
-### 🐳 Docker Setup (Optional)
-
-```bash
-# Build and run containers
-docker-compose up --build
-
-# Stop containers
-docker-compose down
+```text
+http://localhost:5173
 ```
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 supermarket-management-system/
+
+├── backend/
+│   ├── api/
+│   ├── core/
+│   ├── manage.py
+│   └── requirements.txt
 │
-├── backend/                    # Django Backend
-│   ├── api/                   # API endpoints
-│   │   ├── migrations/
-│   │   ├── serializers.py     # Data serializers
-│   │   ├── views.py           # API views
-│   │   ├── urls.py            # URL routing
-│   │   └── models.py          # Database models
-│   │
-│   ├── core/                  # Core settings
-│   │   ├── settings.py        # Django settings
-│   │   ├── urls.py            # Root URL config
-│   │   └── wsgi.py            # WSGI config
-│   │
-│   ├── manage.py              # Django management script
-│   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Environment variables
-│
-├── frontend/                  # React Frontend
-│   ├── public/                # Static assets
-│   │   └── assets/
-│   │
+├── frontend/
+│   ├── public/
 │   ├── src/
-│   │   ├── api/               # API integration
-│   │   │   └── axios.js
-│   │   │
-│   │   ├── assets/            # Images, fonts, etc.
-│   │   │
-│   │   ├── components/        # Reusable components
-│   │   │   ├── common/        # Shared components
-│   │   │   ├── layout/        # Layout components
-│   │   │   └── features/      # Feature-specific components
-│   │   │
-│   │   ├── context/           # React Context
-│   │   │   └── AuthContext.jsx
-│   │   │
-│   │   ├── hooks/             # Custom hooks
-│   │   │   └── useAuth.js
-│   │   │
-│   │   ├── pages/             # Page components
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Inventory.jsx
-│   │   │   ├── POS.jsx
-│   │   │   └── Login.jsx
-│   │   │
-│   │   ├── utils/             # Utility functions
-│   │   │
-│   │   ├── App.jsx            # Main App component
-│   │   └── main.jsx           # Entry point
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── utils/
 │   │
-│   ├── index.html
-│   ├── package.json           # NPM dependencies
-│   ├── vite.config.js         # Vite configuration
-│   └── tailwind.config.js     # Tailwind configuration
+│   ├── package.json
+│   └── vite.config.js
 │
-├── docs/                      # Documentation
-├── .gitignore
+├── docs/
 ├── README.md
 └── LICENSE
 ```
 
 ---
 
-## 📚 API Documentation
+## 📚 API Endpoints
 
-### Authentication Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register/` | Register new user |
-| POST | `/api/auth/login/` | User login |
-| POST | `/api/auth/logout/` | User logout |
-| GET | `/api/auth/user/` | Get current user |
-
-### Product Endpoints
+### Authentication
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/products/` | List all products |
-| POST | `/api/products/` | Create product |
-| GET | `/api/products/{id}/` | Get product details |
+| POST | `/api/auth/register/` | Register user |
+| POST | `/api/auth/login/` | Login user |
+| POST | `/api/auth/logout/` | Logout user |
+| GET | `/api/auth/user/` | Current authenticated user |
+
+### Products
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/products/` | Get all products |
+| POST | `/api/products/` | Add product |
+| GET | `/api/products/{id}/` | Product details |
 | PUT | `/api/products/{id}/` | Update product |
 | DELETE | `/api/products/{id}/` | Delete product |
 
-### Sales Endpoints
+### Sales
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/sales/` | List all sales |
+| GET | `/api/sales/` | Get sales |
 | POST | `/api/sales/` | Create sale |
-| GET | `/api/sales/{id}/` | Get sale details |
-| GET | `/api/sales/reports/` | Generate reports |
-
-For complete API documentation, visit `/api/docs/` when running the server.
+| GET | `/api/sales/{id}/` | Sale details |
+| GET | `/api/sales/reports/` | Sales reports |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Here's how you can help:
+Contributions are welcome.
 
-### Getting Started
+To contribute:
 
-1. **Fork** the repository
-2. **Clone** your fork locally
-3. **Create** a new branch (`git checkout -b feature/amazing-feature`)
-4. **Make** your changes
-5. **Commit** your changes (`git commit -m 'Add some amazing feature'`)
-6. **Push** to the branch (`git push origin feature/amazing-feature`)
-7. **Open** a Pull Request
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push the branch
+5. Open a pull request
 
-### Contribution Guidelines
+Please ensure:
+- Code follows the existing project structure
+- Commit messages are meaningful
+- New features include proper testing
+- Documentation is updated when necessary
 
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PR
-
-### Code of Conduct
-
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+Because eventually every project becomes “temporary code” running something important. Modern civilization is held together by APIs and developers pretending the production server is fine.
 
 ---
 
-## 👥 Team
+## 👨‍💻 Team
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Amit-kumar80844">
-        <img src="https://placehold.co/100x100/2563eb/ffffff?text=AK" width="100px;" alt="Amit Kumar"/><br />
-        <sub><b>Amit Kumar</b></sub>
-      </a><br />
-      <sub>Backend Development</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/your-username">
-        <img src="https://placehold.co/100x100/2563eb/ffffff?text=RS" width="100px;" alt="Rohit Pratap Singh"/><br />
-        <sub><b>Rohit Pratap Singh</b></sub>
-      </a><br />
-      <sub>Frontend Development</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/your-username">
-        <img src="https://placehold.co/100x100/2563eb/ffffff?text=CB" width="100px;" alt="Ch. Bhargav"/><br />
-        <sub><b>Ch. Bhargav</b></sub>
-      </a><br />
-      <sub>Database Management</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/your-username">
-        <img src="https://placehold.co/100x100/2563eb/ffffff?text=BA" width="100px;" alt="Bhaskar Akshay Sriram"/><br />
-        <sub><b>Bhaskar Akshay Sriram</b></sub>
-      </a><br />
-      <sub>Frontend Development</sub>
-    </td>
-  </tr>
-</table>
+| Name | Role |
+|------|------|
+| Amit Kumar | Backend Development |
+| Rohit Pratap Singh | Frontend Development |
+| Ch. Bhargav | Database Management |
+| Bhaskar Akshay Sriram | Frontend Development |
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2025 Supermarket Management System Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
-```
-
----
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors who helped build this project
-- Special thanks to the open-source community
-- Icons by [Lucide](https://lucide.dev/)
-- Inspiration from modern retail management systems
+This project is licensed under the MIT License.
 
 ---
 
 ## 📞 Support
 
-Having issues? We're here to help!
+For issues, bug reports, or feature requests:
 
-- 📧 Email: support@supermarket-system.com
-- 💬 Discord: [Join our server](https://discord.gg/your-invite)
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/your-repo/issues)
-- 📖 Wiki: [Project Wiki](https://github.com/your-username/your-repo/wiki)
+- Open an issue on GitHub
+- Review the documentation
+- Contact the development team
 
 ---
 
-<div align="center">
+## 🙌 Acknowledgements
 
-### ⭐ Star this repository if you find it helpful!
+- Open-source contributors and libraries
+- React, Django, and MongoDB communities
+- Developers who debug production issues at 2 AM while claiming everything is “stable”
 
-Made with ❤️ by the Supermarket Management System Team
+---
 
-[⬆ Back to Top](#-supermarket-store-management-system)
+## ⭐ Star the Repository
 
->>>>>>> db43d0852e8f9971dbb21579555cf3630b70c19c
-</div>
+If you found this project useful, consider giving it a star on GitHub.
+
+Tiny digital approval badges. The closest thing developers get to emotional compensation.
